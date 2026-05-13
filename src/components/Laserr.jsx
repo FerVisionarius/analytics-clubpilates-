@@ -41,41 +41,45 @@ export default function Laserr({ branchId }) {
       .gte('time_start', fromISO)
       .lte('time_start', toISO)
 
-    console.log('leads:', leads?.length)
-    console.log('bookings:', bookings?.length, bookings?.[0])
-
     if (!leads || !bookings) {
       setLoading(false)
       return
     }
 
+    const leadIds = leads.map(l => l.glofox_member_id)
     const bookingUserIds = [...new Set(bookings.map(b => b.user_id))]
-    console.log('bookingUserIds:', bookingUserIds.length, bookingUserIds)
 
     let membersMap = {}
 
     if (bookingUserIds.length > 0) {
-      const { data: bookingMembers, error } = await supabase
+      const { data: bookingMembers } = await supabase
         .from('members')
         .select('glofox_member_id, status, membership_start_date')
         .in('glofox_member_id', bookingUserIds)
         .eq('branch_id', branchId)
-
-      console.log('bookingMembers:', bookingMembers?.length, bookingMembers, 'error:', error)
 
       if (bookingMembers) {
         bookingMembers.forEach(m => { membersMap[m.glofox_member_id] = m })
       }
     }
 
-    console.log('membersMap keys:', Object.keys(membersMap).length)
+    // Leads del período que son MEMBER y NO tienen booking en intro
+    let sinIntro = 0
+    if (leadIds.length > 0) {
+      const { data: miembrosSinIntro } = await supabase
+        .from('members')
+        .select('glofox_member_id')
+        .eq('branch_id', branchId)
+        .eq('status', 'MEMBER')
+        .in('glofox_member_id', leadIds)
+        .not('glofox_member_id', 'in', `(${bookingUserIds.length > 0 ? bookingUserIds.join(',') : 'null'})`)
+
+      sinIntro = miembrosSinIntro?.length ?? 0
+    }
 
     const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
     const asistidosBookings = bookings.filter(b => b.attended === true)
     const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
-
-    console.log('asistidosIds:', asistidosIds.length)
-    asistidosIds.forEach(uid => console.log(uid, '->', membersMap[uid]?.status, membersMap[uid]?.membership_start_date))
 
     let compraronEnMomento = 0
     let compraronDespues = 0
@@ -105,6 +109,7 @@ export default function Laserr({ branchId }) {
       compraronEnMomento,
       compraronDespues,
       noCompraron,
+      sinIntro,
     })
 
     setLoading(false)
@@ -122,6 +127,7 @@ export default function Laserr({ branchId }) {
     { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), color: 'bg-green-500', desc: 'Membresía el mismo día de la clase' },
     { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), color: 'bg-emerald-400', desc: 'Membresía en días posteriores' },
     { label: 'No compraron', value: stats.noCompraron, pct: pct(stats.noCompraron, stats.asistidos), color: 'bg-red-500', desc: 'Asistieron pero no compraron membresía' },
+    { label: 'Nuevos miembros sin intro', value: stats.sinIntro, pct: pct(stats.sinIntro, stats.leads), color: 'bg-amber-500', desc: 'Compraron directamente sin pasar por clase intro' },
   ] : []
 
   const maxVal = stats ? Math.max(stats.leads, 1) : 1
@@ -201,7 +207,7 @@ export default function Laserr({ branchId }) {
             <div className="flex items-center gap-8">
               <div>
                 <p className="text-3xl font-bold text-white">
-                  {pct(stats.compraronEnMomento + stats.compraronDespues, stats.leads)}
+                  {pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">leads → membresía</p>
               </div>
@@ -213,7 +219,7 @@ export default function Laserr({ branchId }) {
               </div>
               <div>
                 <p className="text-3xl font-bold text-white">
-                  {stats.compraronEnMomento + stats.compraronDespues}
+                  {stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">total conversiones</p>
               </div>
