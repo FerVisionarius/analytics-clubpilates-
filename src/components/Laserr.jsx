@@ -74,7 +74,8 @@ export default function Laserr({ branchId }) {
         .eq('status', 'MEMBER')
         .or('membership_type.neq.payg,membership_type.is.null')
         .in('glofox_member_id', leadIds)
-        .not('glofox_member_id', 'in', `(${bookingUserIds.length > 0 ? bookingUserIds.join(',') : 'null'})`)
+        const leadIds = [...new Set(bookings.map(b => b.user_id))]
+        .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
 
       sinIntro = miembrosSinIntro?.length ?? 0
     }
