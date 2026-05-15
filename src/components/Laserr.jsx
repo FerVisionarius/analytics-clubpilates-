@@ -54,10 +54,10 @@ export default function Laserr({ branchId }) {
     const asistidosBookings = bookings.filter(b => b.attended === true)
     const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
 
-    // IDs de todos los que tienen algún booking (asistieron o no)
+    // IDs de todos los que tienen algún booking
     const bookingUserIds = [...new Set(bookings.map(b => b.user_id))]
 
-    // 3. Datos de miembros que asistieron
+    // 3. Datos de miembros que asistieron — excluir payg, incluir membership_start_date dentro del rango
     let membersMap = {}
     if (asistidosIds.length > 0) {
       const { data: bookingMembers } = await supabase
@@ -65,14 +65,15 @@ export default function Laserr({ branchId }) {
         .select('glofox_member_id, status, membership_type, membership_start_date')
         .in('glofox_member_id', asistidosIds)
         .eq('branch_id', branchId)
-        .or('membership_type.neq.payg,membership_type.is.null')
+        .neq('membership_type', 'payg')
+        .lte('membership_start_date', toISO)
 
       if (bookingMembers) {
         bookingMembers.forEach(m => { membersMap[m.glofox_member_id] = m })
       }
     }
 
-    // 4. Leads del período que son MEMBER, no payg, y NO asistieron a intro
+    // 4. Leads del período que son MEMBER, no payg, membership_start_date en rango, y NO asistieron a intro
     let sinIntro = 0
     if (leadIds.length > 0) {
       const { data: miembrosSinIntro } = await supabase
@@ -80,7 +81,9 @@ export default function Laserr({ branchId }) {
         .select('glofox_member_id')
         .eq('branch_id', branchId)
         .eq('status', 'MEMBER')
-        .or('membership_type.neq.payg,membership_type.is.null')
+        .neq('membership_type', 'payg')
+        .gte('membership_start_date', fromISO)
+        .lte('membership_start_date', toISO)
         .in('glofox_member_id', leadIds)
         .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
 
