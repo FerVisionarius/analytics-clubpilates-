@@ -76,18 +76,20 @@ export default function Laserr({ branchId }) {
     // 4. Leads del período que son MEMBER, no payg, membership_start_date en rango, y NO asistieron a intro
     let sinIntro = 0
     if (leadIds.length > 0) {
-      const { data: miembrosSinIntro } = await supabase
-        .from('members')
-        .select('glofox_member_id')
-        .eq('branch_id', branchId)
-        .eq('status', 'MEMBER')
-        .neq('membership_type', 'payg')
-        .gte('membership_start_date', fromISO)
-        .lte('membership_start_date', toISO)
-        .in('glofox_member_id', leadIds)
-        .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
+      console.log('leadIds:', leadIds.length, leadIds)
+console.log('asistidosIds:', asistidosIds)
+const { data: miembrosSinIntro, error: errorSinIntro } = await supabase
+  .from('members')
+  .select('glofox_member_id')
+  .eq('branch_id', branchId)
+  .eq('status', 'MEMBER')
+  .neq('membership_type', 'payg')
+  .or(`membership_start_date.lte.${toISO},membership_start_date.is.null`)
+  .in('glofox_member_id', leadIds)
+  .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
+console.log('miembrosSinIntro:', miembrosSinIntro?.length, miembrosSinIntro, 'error:', errorSinIntro)
 
-      sinIntro = miembrosSinIntro?.length ?? 0
+sinIntro = miembrosSinIntro?.length ?? 0
     }
 
     // 5. Calcular conversiones de asistidos
