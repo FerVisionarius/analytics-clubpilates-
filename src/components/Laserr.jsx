@@ -27,7 +27,6 @@ export default function Laserr({ branchId }) {
     const fromISO = dateFrom + 'T00:00:00+00:00'
     const toISO = dateTo + 'T23:59:59+00:00'
 
-    // 1. Leads creados en el rango
     const { data: leads } = await supabase
       .from('members')
       .select('glofox_member_id')
@@ -35,7 +34,6 @@ export default function Laserr({ branchId }) {
       .gte('created_at', fromISO)
       .lte('created_at', toISO)
 
-    // 2. Bookings de clases intro en el rango
     const { data: bookings } = await supabase
       .from('bookings')
       .select('glofox_booking_id, user_id, attended, time_start')
@@ -50,14 +48,9 @@ export default function Laserr({ branchId }) {
 
     const leadIds = leads.map(l => l.glofox_member_id)
 
-    // IDs de los que asistieron (attended = true)
     const asistidosBookings = bookings.filter(b => b.attended === true)
     const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
 
-    // IDs de todos los que tienen algún booking
-    const bookingUserIds = [...new Set(bookings.map(b => b.user_id))]
-
-    // 3. Datos de miembros que asistieron — excluir payg, incluir membership_start_date dentro del rango
     let membersMap = {}
     if (asistidosIds.length > 0) {
       const { data: bookingMembers } = await supabase
@@ -73,26 +66,21 @@ export default function Laserr({ branchId }) {
       }
     }
 
-    // 4. Leads del período que son MEMBER, no payg, membership_start_date en rango, y NO asistieron a intro
     let sinIntro = 0
     if (leadIds.length > 0) {
-      console.log('leadIds:', leadIds.length, leadIds)
-console.log('asistidosIds:', asistidosIds)
-const { data: miembrosSinIntro, error: errorSinIntro } = await supabase
-  .from('members')
-  .select('glofox_member_id')
-  .eq('branch_id', branchId)
-  .eq('status', 'MEMBER')
-  .neq('membership_type', 'payg')
-  .or(`membership_start_date.lte.${toISO},membership_start_date.is.null`)
-  .in('glofox_member_id', leadIds)
-  .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
-console.log('miembrosSinIntro:', miembrosSinIntro?.length, miembrosSinIntro, 'error:', errorSinIntro)
+      const { data: miembrosSinIntro } = await supabase
+        .from('members')
+        .select('glofox_member_id')
+        .eq('branch_id', branchId)
+        .eq('status', 'MEMBER')
+        .neq('membership_type', 'payg')
+        .or(`membership_start_date.lte.${toISO},membership_start_date.is.null`)
+        .in('glofox_member_id', leadIds)
+        .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
 
-sinIntro = miembrosSinIntro?.length ?? 0
+      sinIntro = miembrosSinIntro?.length ?? 0
     }
 
-    // 5. Calcular conversiones de asistidos
     const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
 
     let compraronEnMomento = 0
