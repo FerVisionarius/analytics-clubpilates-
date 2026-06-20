@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, NavLink, Outlet } from 'react-router-dom'
+import { useParams, useNavigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { supabase } from './lib/supabase'
 import logo from './assets/logo-clubpilates.png'
@@ -40,6 +40,10 @@ const ADMIN_NAV_ITEMS = [
   )},
 ]
 
+const PAGE_TITLES = Object.fromEntries(
+  [...NAV_ITEMS, ...ADMIN_NAV_ITEMS].map(item => [item.id, item.label])
+)
+
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
     isActive
@@ -49,6 +53,7 @@ const navLinkClass = ({ isActive }) =>
 
 export default function CentroLayout() {
   const { branchId } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const { profile, isAdmin, allowedBranchIds, signOut } = useAuth()
   const [branch, setBranch] = useState(null)
@@ -74,6 +79,19 @@ export default function CentroLayout() {
       navigate(`/centro/${allowedBranchIds[0]}`)
     }
   }, [branchId, isAdmin, allowedBranchIds])
+
+  useEffect(() => {
+    const segment = location.pathname.split('/').filter(Boolean).pop()
+    const pageLabel = PAGE_TITLES[segment]
+    if (!pageLabel) return
+
+    const clubName = branch?.name
+      || allBranches.find(b => b.branch_id === branchId)?.name
+
+    document.title = clubName
+      ? `Club Pilates ${clubName} - ${pageLabel}`
+      : `Club Pilates - ${pageLabel}`
+  }, [location.pathname, branch, branchId, allBranches])
 
   const visibleBranches = isAdmin
     ? allBranches

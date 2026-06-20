@@ -16,7 +16,10 @@ export default function ResetPassword({ isInvite = false }) {
         // listo para cambiar contraseña
       }
     })
-  }, [])
+    document.title = isInvite
+      ? 'Club Pilates - Configurar contraseña'
+      : 'Club Pilates - Restablecer contraseña'
+  }, [isInvite])
 
   async function handleSubmit(e) {
     e.preventDefault()

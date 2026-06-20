@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import logo from './assets/logo-clubpilates.png'
 
@@ -8,6 +8,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Club Pilates - Iniciar sesión'
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
