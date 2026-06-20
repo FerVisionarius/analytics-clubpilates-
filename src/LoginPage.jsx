@@ -22,7 +22,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-bg-100 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src={logo} alt="Club Pilates España" className="max-h-28 w-auto object-contain mx-auto mb-6" />
+          <img src={logo} alt="Club Pilates España" className="h-65 w-auto mx-auto mb-6" />
         </div>
 
         <div className="bg-bg-200 border border-bg-300 rounded-2xl p-6">
