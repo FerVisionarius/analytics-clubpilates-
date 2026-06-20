@@ -123,6 +123,7 @@ export default function HeatmapOcupacion({ branchId }) {
   const [selectedClassName, setSelectedClassName] = useState('')
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()))
   const [tooltip, setTooltip] = useState(null)
+  const [classModal, setClassModal] = useState(null)
   const scrollRef = useRef(null)
 
   useEffect(() => {
@@ -208,6 +209,7 @@ export default function HeatmapOcupacion({ branchId }) {
 
       byDay[dayNum].push({
         id: `${c.scheduled_at}_${c.trainer_id || 'x'}_${c.name || 'x'}`,
+        eventId: c.event_id,
         startMin,
         duration,
         h,
@@ -246,6 +248,51 @@ export default function HeatmapOcupacion({ branchId }) {
   }
   function thisWeek() {
     setWeekStart(getMondayOfWeek(new Date()))
+  }
+
+  async function openClassModal(ev, timeLabel) {
+    setTooltip(null)
+    setClassModal({ ev, timeLabel, attendees: [], loading: true, error: null })
+
+    const { data: bookings, error } = await supabase
+      .from('bookings')
+      .select('glofox_booking_id, user_id, attended, time_start')
+      .eq('branch_id', branchId)
+      .eq('time_start', ev.scheduledAt)
+
+    if (error) {
+      setClassModal(prev => prev ? { ...prev, loading: false, error: error.message } : null)
+      return
+    }
+
+    const userIds = [...new Set((bookings || []).map(b => b.user_id).filter(Boolean))]
+    let membersMap = {}
+
+    if (userIds.length > 0) {
+      const { data: members } = await supabase
+        .from('members')
+        .select('glofox_member_id, name, email')
+        .eq('branch_id', branchId)
+        .in('glofox_member_id', userIds)
+
+      if (members) {
+        members.forEach(m => { membersMap[m.glofox_member_id] = m })
+      }
+    }
+
+    const attendees = (bookings || []).map(b => ({
+      name: membersMap[b.user_id]?.name || '—',
+      email: membersMap[b.user_id]?.email || '—',
+      attended: b.attended,
+    }))
+
+    setClassModal(prev => prev ? { ...prev, attendees, loading: false } : null)
+  }
+
+  function attendedLabel(attended) {
+    if (attended === true) return 'Asistió'
+    if (attended === false) return 'No asistió'
+    return 'Reservado'
   }
 
   // Hour labels for Y axis
@@ -394,6 +441,7 @@ export default function HeatmapOcupacion({ branchId }) {
                             y: e.clientY
                           })}
                           onMouseLeave={() => setTooltip(null)}
+                          onClick={() => openClassModal(ev, timeLabel)}
                         >
                           <div className="px-1.5 py-1 h-full flex flex-col justify-start overflow-hidden">
                             {height >= 18 && (
@@ -460,6 +508,81 @@ export default function HeatmapOcupacion({ branchId }) {
           {tooltip.ev.trainerName && (
             <p className="text-text-200">Instructor: <span className="text-text-100">{tooltip.ev.trainerName}</span></p>
           )}
+          <p className="text-text-200 text-xs mt-2 text-accent-200">Clic para ver reservas</p>
+        </div>
+      )}
+
+      {/* Modal reservas */}
+      {classModal && (
+        <div
+          className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
+          onClick={() => setClassModal(null)}
+        >
+          <div
+            className="bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
+              <div>
+                <h3 className="text-text-100 font-semibold">{classModal.ev.name || 'Clase'}</h3>
+                <p className="text-xs text-text-200 mt-0.5">
+                  {classModal.timeLabel}
+                  {classModal.ev.trainerName ? ` · ${classModal.ev.trainerName}` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-text-200">
+                  {classModal.loading ? '…' : `${classModal.attendees.length} reservas`}
+                </span>
+                <button
+                  onClick={() => setClassModal(null)}
+                  className="text-text-200 hover:text-text-100 transition-colors text-lg leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {classModal.loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : classModal.error ? (
+                <p className="text-red-600 text-sm text-center py-12 px-6">{classModal.error}</p>
+              ) : classModal.attendees.length === 0 ? (
+                <p className="text-text-200 text-sm text-center py-12">No hay reservas para esta clase</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-bg-200 border-b border-bg-300">
+                    <tr>
+                      <th className="text-left text-xs text-primary-300 font-medium px-6 py-3">Nombre</th>
+                      <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Email</th>
+                      <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classModal.attendees.map((p, i) => (
+                      <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
+                        <td className="px-6 py-3 text-text-100 font-medium">{p.name}</td>
+                        <td className="px-4 py-3 text-text-200">{p.email}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            p.attended === true
+                              ? 'bg-green-50 text-green-700 border border-green-200'
+                              : p.attended === false
+                                ? 'bg-red-50 text-red-700 border border-red-200'
+                                : 'bg-primary-100 text-text-200 border border-primary-200'
+                          }`}>
+                            {attendedLabel(p.attended)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

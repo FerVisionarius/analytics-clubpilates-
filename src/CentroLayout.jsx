@@ -82,9 +82,9 @@ export default function CentroLayout() {
   return (
     <div className="min-h-screen bg-bg-100 text-text-100 flex flex-col">
       <header className="border-b border-bg-300 bg-bg-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 h-25 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 min-h-16 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center shrink-0">
-            <img src={logo} alt="Club Pilates España" className="h-35 w-auto" />
+            <img src={logo} alt="Club Pilates España" className="h-12 w-auto max-w-[160px] object-contain shrink-0" />
           </div>
 
           <div className="flex items-center gap-2 flex-1 max-w-xs">
