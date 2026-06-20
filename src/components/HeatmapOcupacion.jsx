@@ -290,7 +290,7 @@ export default function HeatmapOcupacion({ branchId }) {
 
     let allBookings = []
     from = 0
-    let bookingFields = 'glofox_booking_id, user_id, attended, time_start, event_id'
+    let bookingFields = 'glofox_booking_id, user_id, attended, time_start, event_id, status'
 
     while (true) {
       const { data: bookings, error } = await supabase
@@ -302,7 +302,7 @@ export default function HeatmapOcupacion({ branchId }) {
         .range(from, from + pageSize - 1)
 
       if (error && bookingFields.includes('event_id')) {
-        bookingFields = 'glofox_booking_id, user_id, attended, time_start'
+        bookingFields = 'glofox_booking_id, user_id, attended, time_start, status'
         from = 0
         allBookings = []
         continue
@@ -397,7 +397,7 @@ export default function HeatmapOcupacion({ branchId }) {
 
       let query = supabase
         .from('class_bookings')
-        .select('glofox_booking_id, user_id, attended, time_start, event_id')
+        .select('glofox_booking_id, user_id, attended, time_start, event_id, status')
         .eq('branch_id', branchId)
         .gte('time_start', fromISO)
         .lte('time_start', toISO)
@@ -409,7 +409,7 @@ export default function HeatmapOcupacion({ branchId }) {
       if (error && ev.eventId) {
         const fallback = await supabase
           .from('class_bookings')
-          .select('glofox_booking_id, user_id, attended, time_start')
+          .select('glofox_booking_id, user_id, attended, time_start, status')
           .eq('branch_id', branchId)
           .gte('time_start', fromISO)
           .lte('time_start', toISO)
@@ -451,12 +451,14 @@ export default function HeatmapOcupacion({ branchId }) {
       name: membersMap[b.user_id]?.name || '—',
       email: membersMap[b.user_id]?.email || '—',
       attended: b.attended,
+      status: b.status,
     }))
 
     setClassModal(prev => prev ? { ...prev, attendees, loading: false } : null)
   }
 
-  function attendedLabel(attended) {
+  function attendedLabel(attended, status) {
+    if (status === 'CANCELED') return 'Cancelado'
     if (attended === true) return 'Asistió'
     if (attended === false) return 'No asistió'
     return 'Reservado'
@@ -739,13 +741,15 @@ export default function HeatmapOcupacion({ branchId }) {
                         <td className="px-4 py-3 text-text-200">{p.email}</td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            p.attended === true
-                              ? 'bg-green-50 text-green-700 border border-green-200'
-                              : p.attended === false
-                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                : 'bg-primary-100 text-text-200 border border-primary-200'
+                            p.status === 'CANCELED'
+                              ? 'bg-primary-100 text-text-200 border border-primary-200'
+                              : p.attended === true
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : p.attended === false
+                                  ? 'bg-red-50 text-red-700 border border-red-200'
+                                  : 'bg-primary-100 text-text-200 border border-primary-200'
                           }`}>
-                            {attendedLabel(p.attended)}
+                            {attendedLabel(p.attended, p.status)}
                           </span>
                         </td>
                       </tr>
