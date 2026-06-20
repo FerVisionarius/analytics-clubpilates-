@@ -49,9 +49,9 @@ function getMadridKey(iso) {
   return `${y}-${mo}-${day}T${h}:${m}`
 }
 
-// bookings.time_start está guardado como hora de Madrid local con sufijo +00
-// (no es UTC real, a diferencia de classes.scheduled_at). Por eso aquí NO se
-// aplica conversión de zona: se leen los componentes UTC del string tal cual.
+// class_bookings.time_start está guardado como hora de Madrid local con sufijo
+// +00 (no es UTC real, a diferencia de classes.scheduled_at). Por eso aquí NO
+// se aplica conversión de zona: se leen los componentes UTC del string tal cual.
 function getBookingMadridKey(iso) {
   const d = new Date(iso)
   const y = d.getUTCFullYear()
@@ -279,10 +279,10 @@ export default function HeatmapOcupacion({ branchId }) {
     uniqueStaff.forEach(s => { staffMap[s.glofox_user_id] = s.name })
     setInstructors(uniqueStaff)
 
-    // bookings.time_start está en hora Madrid local con sufijo +00 (no UTC real).
-    // classes.scheduled_at sí está en UTC real, que es una semana antes/después
-    // en UTC respecto a Madrid. Para no perder bookings en los bordes de la
-    // semana por este desfase, se amplía el rango de consulta ±1 día.
+    // class_bookings.time_start está en hora Madrid local con sufijo +00 (no UTC
+    // real). classes.scheduled_at sí está en UTC real, que puede caer un día
+    // antes/después en UTC respecto a Madrid. Para no perder bookings en los
+    // bordes de la semana por este desfase, se amplía el rango de consulta ±1 día.
     const bookingRangeStart = new Date(weekStart)
     bookingRangeStart.setDate(bookingRangeStart.getDate() - 1)
     const bookingRangeEnd = new Date(weekEnd)
@@ -294,7 +294,7 @@ export default function HeatmapOcupacion({ branchId }) {
 
     while (true) {
       const { data: bookings, error } = await supabase
-        .from('bookings')
+        .from('class_bookings')
         .select(bookingFields)
         .eq('branch_id', branchId)
         .gte('time_start', bookingRangeStart.toISOString())
@@ -388,15 +388,15 @@ export default function HeatmapOcupacion({ branchId }) {
     }
 
     if (bookings.length === 0) {
-      // bookings.time_start está en hora Madrid local con sufijo +00, así que
-      // el rango de búsqueda debe construirse en esa misma convención: se toma
-      // la hora Madrid de la clase y se usa tal cual como si fuera UTC.
+      // class_bookings.time_start está en hora Madrid local con sufijo +00,
+      // así que el rango de búsqueda debe construirse en esa misma convención:
+      // se toma la hora Madrid de la clase y se usa tal cual como si fuera UTC.
       const madridT = getMadridTime(ev.scheduledAt)
       const fromISO = new Date(madridT.getTime() - 30 * 60 * 1000).toISOString()
       const toISO = new Date(madridT.getTime() + 30 * 60 * 1000).toISOString()
 
       let query = supabase
-        .from('bookings')
+        .from('class_bookings')
         .select('glofox_booking_id, user_id, attended, time_start, event_id')
         .eq('branch_id', branchId)
         .gte('time_start', fromISO)
@@ -408,7 +408,7 @@ export default function HeatmapOcupacion({ branchId }) {
 
       if (error && ev.eventId) {
         const fallback = await supabase
-          .from('bookings')
+          .from('class_bookings')
           .select('glofox_booking_id, user_id, attended, time_start')
           .eq('branch_id', branchId)
           .gte('time_start', fromISO)
