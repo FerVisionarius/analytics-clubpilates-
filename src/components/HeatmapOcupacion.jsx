@@ -49,19 +49,24 @@ function getMadridKey(iso) {
   return `${y}-${mo}-${day}T${h}:${m}`
 }
 
+// FIX: antes se indexaba solo por event_id, lo que mezclaba todas las
+// repeticiones semanales de una misma clase recurrente (mismo event_id,
+// distintas fechas/horas). Ahora se indexa por event_id + Madrid key
+// (fecha y hora exacta), que identifica la sesión concreta.
 function buildBookingIndex(bookings) {
-  const byEventId = {}
+  const byEventTime = {}
   const byMadridKey = {}
   bookings.forEach(b => {
-    if (b.event_id) {
-      if (!byEventId[b.event_id]) byEventId[b.event_id] = []
-      byEventId[b.event_id].push(b)
-    }
     const key = getMadridKey(b.time_start)
+    if (b.event_id) {
+      const eventTimeKey = `${b.event_id}_${key}`
+      if (!byEventTime[eventTimeKey]) byEventTime[eventTimeKey] = []
+      byEventTime[eventTimeKey].push(b)
+    }
     if (!byMadridKey[key]) byMadridKey[key] = []
     byMadridKey[key].push(b)
   })
-  return { byEventId, byMadridKey }
+  return { byEventTime, byMadridKey }
 }
 
 const OCCUPANCY_RED = '#dd0025'
@@ -198,7 +203,8 @@ export default function HeatmapOcupacion({ branchId }) {
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()))
   const [tooltip, setTooltip] = useState(null)
   const [classModal, setClassModal] = useState(null)
-  const [bookingIndex, setBookingIndex] = useState({ byEventId: {}, byMadridKey: {} })
+  // FIX: byEventId -> byEventTime (coherente con buildBookingIndex)
+  const [bookingIndex, setBookingIndex] = useState({ byEventTime: {}, byMadridKey: {} })
   const scrollRef = useRef(null)
 
   useEffect(() => {
@@ -356,11 +362,17 @@ export default function HeatmapOcupacion({ branchId }) {
     setTooltip(null)
     setClassModal({ ev, timeLabel, attendees: [], loading: true, error: null })
 
+    // FIX: la clave de lookup ahora combina event_id + Madrid key (fecha/hora
+    // exacta de ESTA sesión), en vez de event_id solo. Antes, event_id solo
+    // identifica la clase recurrente (plantilla), no la sesión concreta, así
+    // que todas las repeticiones semanales de "Reformer Flow 1.0" compartían
+    // bucket y se mezclaban los asistentes de sesiones distintas.
+    const madridKey = getMadridKey(ev.scheduledAt)
     let bookings = []
-    if (ev.eventId && bookingIndex.byEventId[ev.eventId]?.length) {
-      bookings = bookingIndex.byEventId[ev.eventId]
+    if (ev.eventId) {
+      bookings = bookingIndex.byEventTime[`${ev.eventId}_${madridKey}`] || []
     } else {
-      bookings = bookingIndex.byMadridKey[getMadridKey(ev.scheduledAt)] || []
+      bookings = bookingIndex.byMadridKey[madridKey] || []
     }
 
     if (bookings.length === 0) {
@@ -399,7 +411,13 @@ export default function HeatmapOcupacion({ branchId }) {
         bookings = data || []
       }
 
-      if (!ev.eventId && bookings.length > 1) {
+      // FIX: este filtro de seguridad antes solo se aplicaba "if (!ev.eventId)".
+      // Ahora se aplica siempre que haya más de un resultado, porque incluso
+      // filtrando por event_id en la query de fallback (rango de ±30 min),
+      // dos sesiones del mismo event_id muy cercanas en el tiempo podrían
+      // colar bookings de la sesión equivocada. Filtrar también por
+      // Madrid key exacta asegura que solo queden los de ESTA sesión.
+      if (bookings.length > 1) {
         const targetKey = getMadridKey(ev.scheduledAt)
         const matched = bookings.filter(b => getMadridKey(b.time_start) === targetKey)
         if (matched.length) bookings = matched
