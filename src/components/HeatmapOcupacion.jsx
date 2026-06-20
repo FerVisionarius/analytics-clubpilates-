@@ -49,15 +49,24 @@ function getMadridKey(iso) {
   return `${y}-${mo}-${day}T${h}:${m}`
 }
 
-// FIX: antes se indexaba solo por event_id, lo que mezclaba todas las
-// repeticiones semanales de una misma clase recurrente (mismo event_id,
-// distintas fechas/horas). Ahora se indexa por event_id + Madrid key
-// (fecha y hora exacta), que identifica la sesión concreta.
+// bookings.time_start está guardado como hora de Madrid local con sufijo +00
+// (no es UTC real, a diferencia de classes.scheduled_at). Por eso aquí NO se
+// aplica conversión de zona: se leen los componentes UTC del string tal cual.
+function getBookingMadridKey(iso) {
+  const d = new Date(iso)
+  const y = d.getUTCFullYear()
+  const mo = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const h = String(d.getUTCHours()).padStart(2, '0')
+  const m = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${y}-${mo}-${day}T${h}:${m}`
+}
+
 function buildBookingIndex(bookings) {
   const byEventTime = {}
   const byMadridKey = {}
   bookings.forEach(b => {
-    const key = getMadridKey(b.time_start)
+    const key = getBookingMadridKey(b.time_start)
     if (b.event_id) {
       const eventTimeKey = `${b.event_id}_${key}`
       if (!byEventTime[eventTimeKey]) byEventTime[eventTimeKey] = []
@@ -203,7 +212,6 @@ export default function HeatmapOcupacion({ branchId }) {
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()))
   const [tooltip, setTooltip] = useState(null)
   const [classModal, setClassModal] = useState(null)
-  // FIX: byEventId -> byEventTime (coherente con buildBookingIndex)
   const [bookingIndex, setBookingIndex] = useState({ byEventTime: {}, byMadridKey: {} })
   const scrollRef = useRef(null)
 
@@ -271,6 +279,15 @@ export default function HeatmapOcupacion({ branchId }) {
     uniqueStaff.forEach(s => { staffMap[s.glofox_user_id] = s.name })
     setInstructors(uniqueStaff)
 
+    // bookings.time_start está en hora Madrid local con sufijo +00 (no UTC real).
+    // classes.scheduled_at sí está en UTC real, que es una semana antes/después
+    // en UTC respecto a Madrid. Para no perder bookings en los bordes de la
+    // semana por este desfase, se amplía el rango de consulta ±1 día.
+    const bookingRangeStart = new Date(weekStart)
+    bookingRangeStart.setDate(bookingRangeStart.getDate() - 1)
+    const bookingRangeEnd = new Date(weekEnd)
+    bookingRangeEnd.setDate(bookingRangeEnd.getDate() + 1)
+
     let allBookings = []
     from = 0
     let bookingFields = 'glofox_booking_id, user_id, attended, time_start, event_id'
@@ -280,8 +297,8 @@ export default function HeatmapOcupacion({ branchId }) {
         .from('bookings')
         .select(bookingFields)
         .eq('branch_id', branchId)
-        .gte('time_start', weekStart.toISOString())
-        .lt('time_start', weekEnd.toISOString())
+        .gte('time_start', bookingRangeStart.toISOString())
+        .lt('time_start', bookingRangeEnd.toISOString())
         .range(from, from + pageSize - 1)
 
       if (error && bookingFields.includes('event_id')) {
@@ -362,11 +379,6 @@ export default function HeatmapOcupacion({ branchId }) {
     setTooltip(null)
     setClassModal({ ev, timeLabel, attendees: [], loading: true, error: null })
 
-    // FIX: la clave de lookup ahora combina event_id + Madrid key (fecha/hora
-    // exacta de ESTA sesión), en vez de event_id solo. Antes, event_id solo
-    // identifica la clase recurrente (plantilla), no la sesión concreta, así
-    // que todas las repeticiones semanales de "Reformer Flow 1.0" compartían
-    // bucket y se mezclaban los asistentes de sesiones distintas.
     const madridKey = getMadridKey(ev.scheduledAt)
     let bookings = []
     if (ev.eventId) {
@@ -376,9 +388,12 @@ export default function HeatmapOcupacion({ branchId }) {
     }
 
     if (bookings.length === 0) {
-      const t = new Date(ev.scheduledAt)
-      const fromISO = new Date(t.getTime() - 30 * 60 * 1000).toISOString()
-      const toISO = new Date(t.getTime() + 30 * 60 * 1000).toISOString()
+      // bookings.time_start está en hora Madrid local con sufijo +00, así que
+      // el rango de búsqueda debe construirse en esa misma convención: se toma
+      // la hora Madrid de la clase y se usa tal cual como si fuera UTC.
+      const madridT = getMadridTime(ev.scheduledAt)
+      const fromISO = new Date(madridT.getTime() - 30 * 60 * 1000).toISOString()
+      const toISO = new Date(madridT.getTime() + 30 * 60 * 1000).toISOString()
 
       let query = supabase
         .from('bookings')
@@ -411,15 +426,8 @@ export default function HeatmapOcupacion({ branchId }) {
         bookings = data || []
       }
 
-      // FIX: este filtro de seguridad antes solo se aplicaba "if (!ev.eventId)".
-      // Ahora se aplica siempre que haya más de un resultado, porque incluso
-      // filtrando por event_id en la query de fallback (rango de ±30 min),
-      // dos sesiones del mismo event_id muy cercanas en el tiempo podrían
-      // colar bookings de la sesión equivocada. Filtrar también por
-      // Madrid key exacta asegura que solo queden los de ESTA sesión.
       if (bookings.length > 1) {
-        const targetKey = getMadridKey(ev.scheduledAt)
-        const matched = bookings.filter(b => getMadridKey(b.time_start) === targetKey)
+        const matched = bookings.filter(b => getBookingMadridKey(b.time_start) === madridKey)
         if (matched.length) bookings = matched
       }
     }
