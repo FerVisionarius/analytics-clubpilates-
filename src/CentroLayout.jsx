@@ -90,7 +90,11 @@ export default function CentroLayout() {
               )}
             </div>
           ) : (
-            <div className="flex-1" />
+            <div className="flex-1 flex items-center min-w-0">
+              <p className="text-sm font-medium text-text-100 truncate">
+                {branch?.name || allBranches.find(b => b.branch_id === branchId)?.name || '—'}
+              </p>
+            </div>
           )}
 
           <div className="flex items-center gap-3 shrink-0">
