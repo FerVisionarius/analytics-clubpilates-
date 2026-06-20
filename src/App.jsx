@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from '
 import { AuthProvider, useAuth } from './AuthContext'
 import LoginPage from './LoginPage'
 import CentroLayout from './CentroLayout'
+import Home from './Home'
 import HeatmapOcupacion from './components/HeatmapOcupacion'
 import Laserr from './components/Laserr'
 import ComingSoon from './ComingSoon'
@@ -28,7 +29,7 @@ function RootRedirect() {
     if (loading) return
     if (isAdmin || allowedBranchIds.length > 0) {
       const firstBranch = allowedBranchIds[0]
-      if (firstBranch) navigate(`/centro/${firstBranch}/ocupacion`, { replace: true })
+      if (firstBranch) navigate(`/centro/${firstBranch}/home`, { replace: true })
     }
   }, [loading, isAdmin, allowedBranchIds])
 
@@ -49,7 +50,7 @@ function AdminRootRedirect() {
       import('./lib/supabase').then(({ supabase }) => {
         supabase.from('branches').select('branch_id').order('name').limit(1)
           .then(({ data }) => {
-            if (data?.[0]) navigate(`/centro/${data[0].branch_id}/ocupacion`, { replace: true })
+            if (data?.[0]) navigate(`/centro/${data[0].branch_id}/home`, { replace: true })
           })
       })
     }
@@ -93,7 +94,8 @@ function AppRoutes() {
       <Route path="/centro/:branchId" element={
         <ProtectedRoute><CentroLayout /></ProtectedRoute>
       }>
-        <Route index element={<Navigate to="ocupacion" replace />} />
+        <Route index element={<Navigate to="home" replace />} />
+        <Route path="home" element={<Home />} />
         <Route path="ocupacion" element={<OcupacionPage />} />
         <Route path="instructores" element={<ComingSoon titulo="Ranking de Instructores" />} />
         <Route path="miembros" element={<ComingSoon titulo="Métricas de Miembros" />} />
