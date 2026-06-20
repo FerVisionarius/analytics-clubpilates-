@@ -44,6 +44,13 @@ const PAGE_TITLES = Object.fromEntries(
   [...NAV_ITEMS, ...ADMIN_NAV_ITEMS].map(item => [item.id, item.label])
 )
 
+function buildDocumentTitle(clubName, pageLabel) {
+  if (!clubName) return `Club Pilates - ${pageLabel}`
+  const name = clubName.trim()
+  if (/^club\s+pilates\b/i.test(name)) return `${name} - ${pageLabel}`
+  return `Club Pilates ${name} - ${pageLabel}`
+}
+
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
     isActive
@@ -88,9 +95,7 @@ export default function CentroLayout() {
     const clubName = branch?.name
       || allBranches.find(b => b.branch_id === branchId)?.name
 
-    document.title = clubName
-      ? `Club Pilates ${clubName} - ${pageLabel}`
-      : `Club Pilates - ${pageLabel}`
+    document.title = buildDocumentTitle(clubName, pageLabel)
   }, [location.pathname, branch, branchId, allBranches])
 
   const visibleBranches = isAdmin
