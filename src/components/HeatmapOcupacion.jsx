@@ -39,6 +39,31 @@ function getMadridTime(utcDate) {
   return new Date(d.getTime() + diff)
 }
 
+function getMadridKey(iso) {
+  const d = getMadridTime(iso)
+  const y = d.getUTCFullYear()
+  const mo = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const h = String(d.getUTCHours()).padStart(2, '0')
+  const m = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${y}-${mo}-${day}T${h}:${m}`
+}
+
+function buildBookingIndex(bookings) {
+  const byEventId = {}
+  const byMadridKey = {}
+  bookings.forEach(b => {
+    if (b.event_id) {
+      if (!byEventId[b.event_id]) byEventId[b.event_id] = []
+      byEventId[b.event_id].push(b)
+    }
+    const key = getMadridKey(b.time_start)
+    if (!byMadridKey[key]) byMadridKey[key] = []
+    byMadridKey[key].push(b)
+  })
+  return { byEventId, byMadridKey }
+}
+
 const OCCUPANCY_RED = '#dd0025'
 const OCCUPANCY_YELLOW = '#FFD700'
 const OCCUPANCY_GREEN = '#1DB954'
@@ -173,6 +198,7 @@ export default function HeatmapOcupacion({ branchId }) {
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()))
   const [tooltip, setTooltip] = useState(null)
   const [classModal, setClassModal] = useState(null)
+  const [bookingIndex, setBookingIndex] = useState({ byEventId: {}, byMadridKey: {} })
   const scrollRef = useRef(null)
 
   useEffect(() => {
@@ -239,6 +265,33 @@ export default function HeatmapOcupacion({ branchId }) {
     uniqueStaff.forEach(s => { staffMap[s.glofox_user_id] = s.name })
     setInstructors(uniqueStaff)
 
+    let allBookings = []
+    from = 0
+    let bookingFields = 'glofox_booking_id, user_id, attended, time_start, event_id'
+
+    while (true) {
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select(bookingFields)
+        .eq('branch_id', branchId)
+        .gte('time_start', weekStart.toISOString())
+        .lt('time_start', weekEnd.toISOString())
+        .range(from, from + pageSize - 1)
+
+      if (error && bookingFields.includes('event_id')) {
+        bookingFields = 'glofox_booking_id, user_id, attended, time_start'
+        from = 0
+        allBookings = []
+        continue
+      }
+      if (error || !bookings?.length) break
+      allBookings = [...allBookings, ...bookings]
+      if (bookings.length < pageSize) break
+      from += pageSize
+    }
+
+    setBookingIndex(buildBookingIndex(allBookings))
+
     // Group by day, then layout overlapping events per day
     const byDay = {}
     DIAS_NUM.forEach(d => { byDay[d] = [] })
@@ -303,18 +356,57 @@ export default function HeatmapOcupacion({ branchId }) {
     setTooltip(null)
     setClassModal({ ev, timeLabel, attendees: [], loading: true, error: null })
 
-    const { data: bookings, error } = await supabase
-      .from('bookings')
-      .select('glofox_booking_id, user_id, attended, time_start')
-      .eq('branch_id', branchId)
-      .eq('time_start', ev.scheduledAt)
-
-    if (error) {
-      setClassModal(prev => prev ? { ...prev, loading: false, error: error.message } : null)
-      return
+    let bookings = []
+    if (ev.eventId && bookingIndex.byEventId[ev.eventId]?.length) {
+      bookings = bookingIndex.byEventId[ev.eventId]
+    } else {
+      bookings = bookingIndex.byMadridKey[getMadridKey(ev.scheduledAt)] || []
     }
 
-    const userIds = [...new Set((bookings || []).map(b => b.user_id).filter(Boolean))]
+    if (bookings.length === 0) {
+      const t = new Date(ev.scheduledAt)
+      const fromISO = new Date(t.getTime() - 30 * 60 * 1000).toISOString()
+      const toISO = new Date(t.getTime() + 30 * 60 * 1000).toISOString()
+
+      let query = supabase
+        .from('bookings')
+        .select('glofox_booking_id, user_id, attended, time_start, event_id')
+        .eq('branch_id', branchId)
+        .gte('time_start', fromISO)
+        .lte('time_start', toISO)
+
+      if (ev.eventId) query = query.eq('event_id', ev.eventId)
+
+      const { data, error } = await query
+
+      if (error && ev.eventId) {
+        const fallback = await supabase
+          .from('bookings')
+          .select('glofox_booking_id, user_id, attended, time_start')
+          .eq('branch_id', branchId)
+          .gte('time_start', fromISO)
+          .lte('time_start', toISO)
+
+        if (fallback.error) {
+          setClassModal(prev => prev ? { ...prev, loading: false, error: fallback.error.message } : null)
+          return
+        }
+        bookings = fallback.data || []
+      } else if (error) {
+        setClassModal(prev => prev ? { ...prev, loading: false, error: error.message } : null)
+        return
+      } else {
+        bookings = data || []
+      }
+
+      if (!ev.eventId && bookings.length > 1) {
+        const targetKey = getMadridKey(ev.scheduledAt)
+        const matched = bookings.filter(b => getMadridKey(b.time_start) === targetKey)
+        if (matched.length) bookings = matched
+      }
+    }
+
+    const userIds = [...new Set(bookings.map(b => b.user_id).filter(Boolean))]
     let membersMap = {}
 
     if (userIds.length > 0) {
@@ -329,7 +421,7 @@ export default function HeatmapOcupacion({ branchId }) {
       }
     }
 
-    const attendees = (bookings || []).map(b => ({
+    const attendees = bookings.map(b => ({
       name: membersMap[b.user_id]?.name || '—',
       email: membersMap[b.user_id]?.email || '—',
       attended: b.attended,

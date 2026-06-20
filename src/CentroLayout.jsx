@@ -27,10 +27,6 @@ export default function CentroLayout() {
     fetchBranches()
   }, [branchId])
 
-  useEffect(() => {
-    if (!isHome) setSidebarOpen(true)
-  }, [location.pathname, isHome])
-
   async function fetchBranches() {
     const { data } = await supabase
       .from('branches')
@@ -71,7 +67,7 @@ export default function CentroLayout() {
   return (
     <div className="min-h-screen bg-bg-100 text-text-100 flex flex-col">
       <header className="border-b border-bg-300 bg-bg-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 h-25 flex items-center justify-between gap-4">
+        <div className="w-full px-6 h-25 flex items-center justify-between gap-4">
           <Link to={`/centro/${branchId}/home`} className="flex items-center shrink-0">
             <img src={logo} alt="Club Pilates España" className="h-35 w-auto" />
           </Link>
@@ -112,74 +108,80 @@ export default function CentroLayout() {
         </div>
       </header>
 
-      <div className={`flex flex-1 w-full ${!isHome && sidebarOpen ? 'max-w-7xl mx-auto' : ''}`}>
-        {!isHome && sidebarOpen && (
-          <aside className="w-52 shrink-0 border-r border-bg-300 bg-bg-200 py-6 px-3 sticky top-30 h-[calc(100vh-3.5rem)] overflow-y-auto">
-            <div className="flex items-center justify-between px-3 mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary-300">Menú</p>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="text-primary-300 hover:text-text-100 p-1 rounded hover:bg-primary-100/60 transition-colors"
-                title="Ocultar menú"
-                aria-label="Ocultar menú"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                </svg>
-              </button>
-            </div>
-
-            <nav className="space-y-0.5 mb-4">
-              <NavLink to={`/centro/${branchId}/home`} className={navLinkClass}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Inicio
-              </NavLink>
-            </nav>
-
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas</p>
-            <nav className="space-y-0.5">
-              {NAV_ITEMS.map(item => (
-                <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
-                  {item.sidebarIcon}
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-
-            {isAdmin && (
-              <div className="mt-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Administración</p>
-                <nav className="space-y-0.5">
-                  {ADMIN_NAV_ITEMS.map(item => (
-                    <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
-                      {item.sidebarIcon}
-                      {item.label}
-                    </NavLink>
-                  ))}
-                </nav>
+      <div className="flex flex-1 w-full min-h-0 relative">
+        {!isHome && (
+          <aside
+            className={`shrink-0 sticky top-25 self-start h-[calc(100vh-6.25rem)] overflow-hidden border-r border-bg-300 bg-bg-200 transition-[width,opacity] duration-500 ease-in-out ${
+              sidebarOpen ? 'w-52 opacity-100' : 'w-0 opacity-0 border-r-0'
+            }`}
+          >
+            <div className="w-52 h-full overflow-y-auto py-6 px-3">
+              <div className="flex items-center justify-between px-3 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary-300">Menú</p>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="text-primary-300 hover:text-text-100 p-1 rounded hover:bg-primary-100/60 transition-colors"
+                  title="Ocultar menú"
+                  aria-label="Ocultar menú"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
               </div>
-            )}
+
+              <nav className="space-y-0.5 mb-4">
+                <NavLink to={`/centro/${branchId}/home`} className={navLinkClass}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  Inicio
+                </NavLink>
+              </nav>
+
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas</p>
+              <nav className="space-y-0.5">
+                {NAV_ITEMS.map(item => (
+                  <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
+                    {item.sidebarIcon}
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+
+              {isAdmin && (
+                <div className="mt-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Administración</p>
+                  <nav className="space-y-0.5">
+                    {ADMIN_NAV_ITEMS.map(item => (
+                      <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
+                        {item.sidebarIcon}
+                        {item.label}
+                      </NavLink>
+                    ))}
+                  </nav>
+                </div>
+              )}
+            </div>
           </aside>
         )}
 
         {!isHome && !sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="fixed left-0 top-1/2 -translate-y-1/2 z-20 bg-bg-200 border border-bg-300 border-l-0 rounded-r-lg px-1.5 py-3 text-primary-300 hover:text-accent-200 hover:bg-primary-100/60 transition-colors shadow-sm"
+            className="fixed left-0 top-1/2 -translate-y-1/2 z-20 bg-bg-200 border border-bg-300 border-l-0 rounded-r-lg px-1.5 py-3 text-primary-300 hover:text-accent-200 hover:bg-primary-100/60 transition-all duration-300 shadow-sm"
             title="Mostrar menú"
             aria-label="Mostrar menú"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         )}
 
         <main
-          className={`flex-1 py-8 px-8 min-w-0 bg-bg-100 transition-all ${
-            isHome || !sidebarOpen ? 'max-w-5xl mx-auto w-full' : ''
+          className={`flex-1 py-8 px-6 sm:px-8 min-w-0 bg-bg-100 transition-all duration-500 ease-in-out ${
+            isHome || !sidebarOpen ? 'max-w-6xl mx-auto w-full' : ''
           }`}
         >
           <Outlet />
