@@ -156,9 +156,9 @@ export default function Laserr({ branchId }) {
   }
 
   const steps = stats ? [
-    { label: 'Leads totales', value: stats.leads, pct: null, color: 'bg-blue-500', desc: 'Nuevos leads en el período', list: stats.leadsList },
-    { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), color: 'bg-indigo-500', desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
-    { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), color: 'bg-violet-500', desc: 'Asistieron a la clase', list: stats.asistidosList },
+    { label: 'Leads totales', value: stats.leads, pct: null, color: 'bg-accent-100', desc: 'Nuevos leads en el período', list: stats.leadsList },
+    { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), color: 'bg-accent-200', desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
+    { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), color: 'bg-primary-200', desc: 'Asistieron a la clase', list: stats.asistidosList },
     { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), color: 'bg-green-500', desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList },
     { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), color: 'bg-emerald-400', desc: 'Membresía en días posteriores', list: stats.compraronDespuesList },
     { label: 'No compraron', value: stats.noCompraron, pct: pct(stats.noCompraron, stats.asistidos), color: 'bg-red-500', desc: 'Asistieron pero no compraron membresía', list: stats.noCompraronList },
@@ -171,34 +171,34 @@ export default function Laserr({ branchId }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-white">Laserr</h2>
-          <p className="text-gray-400 text-sm mt-0.5">Funnel de conversión de leads</p>
+          <h2 className="text-xl font-bold text-text-100">Laserr</h2>
+          <p className="text-text-200 text-sm mt-0.5">Funnel de conversión de leads</p>
         </div>
       </div>
 
       <div className="flex items-center gap-3 mb-8">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400">Desde</label>
+          <label className="text-xs text-text-200">Desde</label>
           <input
             type="date"
             value={dateFrom}
             onChange={e => setDateFrom(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500"
+            className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-accent-100"
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400">Hasta</label>
+          <label className="text-xs text-text-200">Hasta</label>
           <input
             type="date"
             value={dateTo}
             onChange={e => setDateTo(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500"
+            className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-accent-100"
           />
         </div>
         <button
           onClick={fetchData}
           disabled={loading}
-          className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+          className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
         >
           {loading ? 'Cargando...' : 'Aplicar'}
         </button>
@@ -206,7 +206,7 @@ export default function Laserr({ branchId }) {
 
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
@@ -216,23 +216,23 @@ export default function Laserr({ branchId }) {
             <div
               key={i}
               onClick={() => step.list?.length > 0 && setModal({ title: step.label, people: step.list })}
-              className={`bg-gray-900 border border-gray-800 rounded-xl p-4 ${step.list?.length > 0 ? 'cursor-pointer hover:border-gray-600 transition-colors' : ''}`}
+              className={`bg-bg-200 border border-bg-300 rounded-xl p-4 ${step.list?.length > 0 ? 'cursor-pointer hover:border-primary-200 transition-colors' : ''}`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <span className="text-sm font-medium text-white">{step.label}</span>
-                  <span className="text-xs text-gray-500 ml-2">{step.desc}</span>
+                  <span className="text-sm font-medium text-text-100">{step.label}</span>
+                  <span className="text-xs text-primary-300 ml-2">{step.desc}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {step.pct && (
-                    <span className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-text-200 bg-primary-100 px-2 py-0.5 rounded-full">
                       {step.pct} del paso anterior
                     </span>
                   )}
-                  <span className="text-2xl font-bold text-white">{step.value}</span>
+                  <span className="text-2xl font-bold text-text-100">{step.value}</span>
                 </div>
               </div>
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-2 bg-primary-100 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${step.color} rounded-full transition-all duration-500`}
                   style={{ width: `${Math.round((step.value / maxVal) * 100)}%` }}
@@ -241,26 +241,26 @@ export default function Laserr({ branchId }) {
             </div>
           ))}
 
-          <div className="mt-6 bg-gray-900 border border-purple-800/40 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Conversión total</p>
+          <div className="mt-6 bg-bg-200 border border-accent-200/30 rounded-xl p-4">
+            <p className="text-xs text-text-200 uppercase tracking-wider mb-3">Conversión total</p>
             <div className="flex items-center gap-8">
               <div>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-3xl font-bold text-text-100">
                   {pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">leads → membresía</p>
+                <p className="text-xs text-text-200 mt-1">leads → membresía</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-3xl font-bold text-text-100">
                   {pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">asistidos → membresía</p>
+                <p className="text-xs text-text-200 mt-1">asistidos → membresía</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-3xl font-bold text-text-100">
                   {stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">total conversiones</p>
+                <p className="text-xs text-text-200 mt-1">total conversiones</p>
               </div>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function Laserr({ branchId }) {
       )}
 
       {!loading && !stats && (
-        <div className="text-center py-20 text-gray-500">
+        <div className="text-center py-20 text-primary-300">
           Selecciona un rango de fechas y pulsa Aplicar
         </div>
       )}
@@ -276,20 +276,20 @@ export default function Laserr({ branchId }) {
       {/* Modal */}
       {modal && (
         <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
           onClick={() => setModal(null)}
         >
           <div
-            className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+            className="bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-              <h3 className="text-white font-semibold">{modal.title}</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
+              <h3 className="text-text-100 font-semibold">{modal.title}</h3>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400">{modal.people.length} personas</span>
+                <span className="text-xs text-text-200">{modal.people.length} personas</span>
                 <button
                   onClick={() => setModal(null)}
-                  className="text-gray-400 hover:text-white transition-colors text-lg leading-none"
+                  className="text-text-200 hover:text-text-100 transition-colors text-lg leading-none"
                 >
                   ✕
                 </button>
@@ -297,23 +297,23 @@ export default function Laserr({ branchId }) {
             </div>
             <div className="overflow-y-auto flex-1">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-900 border-b border-gray-800">
+                <thead className="sticky top-0 bg-bg-200 border-b border-bg-300">
                   <tr>
-                    <th className="text-left text-xs text-gray-500 font-medium px-6 py-3">Nombre</th>
-                    <th className="text-left text-xs text-gray-500 font-medium px-4 py-3">Email</th>
-                    <th className="text-left text-xs text-gray-500 font-medium px-4 py-3">Alta</th>
-                    <th className="text-left text-xs text-gray-500 font-medium px-4 py-3">Membresía</th>
-                    <th className="text-left text-xs text-gray-500 font-medium px-4 py-3">Compra</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-6 py-3">Nombre</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Email</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Alta</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Membresía</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Compra</th>
                   </tr>
                 </thead>
                 <tbody>
                   {modal.people.map((p, i) => (
-                    <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="px-6 py-3 text-white font-medium">{p.name || '—'}</td>
-                      <td className="px-4 py-3 text-gray-400">{p.email || '—'}</td>
-                      <td className="px-4 py-3 text-gray-400">{formatDate(p.created_at)}</td>
-                      <td className="px-4 py-3 text-gray-400">{p.membership_type ? membershipLabel(p.membership_type) : '—'}</td>
-                      <td className="px-4 py-3 text-gray-400">{formatDate(p.membership_start_date)}</td>
+                    <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
+                      <td className="px-6 py-3 text-text-100 font-medium">{p.name || '—'}</td>
+                      <td className="px-4 py-3 text-text-200">{p.email || '—'}</td>
+                      <td className="px-4 py-3 text-text-200">{formatDate(p.created_at)}</td>
+                      <td className="px-4 py-3 text-text-200">{p.membership_type ? membershipLabel(p.membership_type) : '—'}</td>
+                      <td className="px-4 py-3 text-text-200">{formatDate(p.membership_start_date)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -40,6 +40,13 @@ const ADMIN_NAV_ITEMS = [
   )},
 ]
 
+const navLinkClass = ({ isActive }) =>
+  `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+    isActive
+      ? 'bg-primary-100 text-accent-200 font-medium'
+      : 'text-text-200 hover:text-text-100 hover:bg-primary-100/60'
+  }`
+
 export default function CentroLayout() {
   const { branchId } = useParams()
   const navigate = useNavigate()
@@ -68,42 +75,42 @@ export default function CentroLayout() {
     }
   }, [branchId, isAdmin, allowedBranchIds])
 
+  const visibleBranches = isAdmin
+    ? allBranches
+    : allBranches.filter(b => allowedBranchIds.includes(b.branch_id))
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      {/* Top navbar */}
-      <header className="border-b border-gray-800 bg-gray-950 sticky top-0 z-30">
+    <div className="min-h-screen bg-bg-100 text-text-100 flex flex-col">
+      <header className="border-b border-bg-300 bg-bg-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 h-25 flex items-center justify-between gap-4">
-          {/* Logo */}
           <div className="flex items-center shrink-0">
             <img src={logo} alt="Club Pilates España" className="h-35 w-auto" />
           </div>
 
-          {/* Centro selector */}
           <div className="flex items-center gap-2 flex-1 max-w-xs">
-            {(isAdmin ? allBranches : allBranches.filter(b => allowedBranchIds.includes(b.branch_id))).length >= 1 ? (
+            {visibleBranches.length >= 1 ? (
               <select
                 value={branchId}
                 onChange={e => navigate(`/centro/${e.target.value}`)}
-                className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-purple-500"
+                className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-accent-100"
               >
-                {(isAdmin ? allBranches : allBranches.filter(b => allowedBranchIds.includes(b.branch_id)))
-                  .map(b => <option key={b.branch_id} value={b.branch_id}>{b.name}</option>)
-                }
+                {visibleBranches.map(b => (
+                  <option key={b.branch_id} value={b.branch_id}>{b.name}</option>
+                ))}
               </select>
             ) : (
-              <span className="text-sm font-medium text-gray-200">{branch?.name}</span>
+              <span className="text-sm font-medium text-text-100">{branch?.name}</span>
             )}
           </div>
 
-          {/* User menu */}
           <div className="flex items-center gap-3 shrink-0">
             {isAdmin && (
-              <span className="text-xs bg-purple-900/50 border border-purple-700 text-purple-300 px-2 py-0.5 rounded-full">Admin</span>
+              <span className="text-xs bg-primary-100 border border-primary-200 text-accent-200 px-2 py-0.5 rounded-full">Admin</span>
             )}
-            <span className="text-xs text-gray-400 hidden sm:block">{profile?.email}</span>
+            <span className="text-xs text-text-200 hidden sm:block">{profile?.email}</span>
             <button
               onClick={signOut}
-              className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
+              className="text-xs text-text-200 hover:text-text-100 transition-colors px-2 py-1 rounded hover:bg-primary-100"
             >
               Salir
             </button>
@@ -112,22 +119,11 @@ export default function CentroLayout() {
       </header>
 
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
-        {/* Sidebar */}
-        <aside className="w-52 shrink-0 border-r border-gray-800 py-6 px-3 sticky top-30 h-[calc(100vh-3.5rem)] overflow-y-auto">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 px-3 mb-3">Métricas</p>
+        <aside className="w-52 shrink-0 border-r border-bg-300 bg-bg-200 py-6 px-3 sticky top-30 h-[calc(100vh-3.5rem)] overflow-y-auto">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas</p>
           <nav className="space-y-0.5">
             {NAV_ITEMS.map(item => (
-              <NavLink
-                key={item.id}
-                to={`/centro/${branchId}/${item.id}`}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    isActive
-                      ? 'bg-purple-900/40 text-purple-300 font-medium'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`
-                }
-              >
+              <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                 {item.icon}
                 {item.label}
               </NavLink>
@@ -136,20 +132,10 @@ export default function CentroLayout() {
 
           {isAdmin && (
             <div className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 px-3 mb-3">Administración</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Administración</p>
               <nav className="space-y-0.5">
                 {ADMIN_NAV_ITEMS.map(item => (
-                  <NavLink
-                    key={item.id}
-                    to={`/centro/${branchId}/${item.id}`}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        isActive
-                          ? 'bg-purple-900/40 text-purple-300 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`
-                    }
-                  >
+                  <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                     {item.icon}
                     {item.label}
                   </NavLink>
@@ -159,8 +145,7 @@ export default function CentroLayout() {
           )}
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 py-8 px-8 min-w-0">
+        <main className="flex-1 py-8 px-8 min-w-0 bg-bg-100">
           <Outlet />
         </main>
       </div>

@@ -259,20 +259,20 @@ export default function HeatmapOcupacion({ branchId }) {
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={prevWeek} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm rounded-lg px-3 py-2">← Anterior</button>
-          <button onClick={thisWeek} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm rounded-lg px-3 py-2">Hoy</button>
-          <button onClick={nextWeek} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm rounded-lg px-3 py-2">Siguiente →</button>
-          <span className="text-sm text-gray-400 ml-2">
+          <button onClick={prevWeek} className="bg-white hover:bg-primary-100 border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-2">← Anterior</button>
+          <button onClick={thisWeek} className="bg-white hover:bg-primary-100 border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-2">Hoy</button>
+          <button onClick={nextWeek} className="bg-white hover:bg-primary-100 border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-2">Siguiente →</button>
+          <span className="text-sm text-text-200 ml-2">
             {formatDate(columnDates[0])} — {formatDate(columnDates[6])}
           </span>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Clase:</span>
+            <span className="text-sm text-text-200">Clase:</span>
             <select
               value={selectedClassName}
               onChange={e => setSelectedClassName(e.target.value)}
-              className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500 max-w-52"
+              className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-accent-100 max-w-52"
             >
               <option value="">Todas</option>
               {allClassNames.map(name => (
@@ -281,11 +281,11 @@ export default function HeatmapOcupacion({ branchId }) {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Instructor:</span>
+            <span className="text-sm text-text-200">Instructor:</span>
             <select
               value={selectedInstructor}
               onChange={e => setSelectedInstructor(e.target.value)}
-              className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
+              className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-accent-100"
             >
               <option value="">Todos</option>
               {instructors.map(i => (
@@ -297,19 +297,19 @@ export default function HeatmapOcupacion({ branchId }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64 text-gray-400 text-sm">Cargando datos...</div>
+        <div className="flex items-center justify-center h-64 text-text-200 text-sm">Cargando datos...</div>
       ) : (
-        <div className="rounded-xl border border-gray-800">
+        <div className="rounded-xl border border-bg-300 bg-white">
           {/* Day headers — sticky */}
-          <div className="grid border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-20"
+          <div className="grid border-b border-bg-300 bg-bg-200/90 backdrop-blur-sm sticky top-0 z-20"
             style={{ gridTemplateColumns: '52px repeat(7, 1fr)' }}>
-            <div className="border-r border-gray-800" />
+            <div className="border-r border-bg-300" />
             {DIAS.map((d, i) => {
               const isToday = columnDates[i].toDateString() === new Date().toDateString()
               return (
-                <div key={d} className={`text-center py-2 px-1 border-r border-gray-800 last:border-r-0 ${isToday ? 'bg-purple-900/20' : ''}`}>
-                  <div className={`text-xs font-semibold uppercase tracking-wider ${isToday ? 'text-purple-400' : 'text-gray-400'}`}>{d}</div>
-                  <div className={`text-xs mt-0.5 ${isToday ? 'text-purple-300 font-medium' : 'text-gray-500'}`}>{formatDate(columnDates[i])}</div>
+                <div key={d} className={`text-center py-2 px-1 border-r border-bg-300 last:border-r-0 ${isToday ? 'bg-primary-100/70' : ''}`}>
+                  <div className={`text-xs font-semibold uppercase tracking-wider ${isToday ? 'text-accent-200' : 'text-text-200'}`}>{d}</div>
+                  <div className={`text-xs mt-0.5 ${isToday ? 'text-accent-200 font-medium' : 'text-primary-300'}`}>{formatDate(columnDates[i])}</div>
                 </div>
               )
             })}
@@ -320,11 +320,11 @@ export default function HeatmapOcupacion({ branchId }) {
             <div className="grid" style={{ gridTemplateColumns: '52px repeat(7, 1fr)' }}>
 
               {/* Y-axis hour labels */}
-              <div className="border-r border-gray-800 relative" style={{ height: TOTAL_HEIGHT }}>
+              <div className="border-r border-bg-300 relative" style={{ height: TOTAL_HEIGHT }}>
                 {hourLabels.map((label, i) => (
                   <div
                     key={label}
-                    className="absolute right-2 text-xs text-gray-600 -translate-y-2"
+                    className="absolute right-2 text-xs text-primary-300 -translate-y-2"
                     style={{ top: i * HOUR_HEIGHT }}
                   >
                     {label}
@@ -343,14 +343,14 @@ export default function HeatmapOcupacion({ branchId }) {
                 return (
                   <div
                     key={dayNum}
-                    className={`relative border-r border-gray-800 last:border-r-0 ${isToday ? 'bg-purple-900/5' : ''}`}
+                    className={`relative border-r border-bg-300 last:border-r-0 ${isToday ? 'bg-primary-100/30' : ''}`}
                     style={{ height: TOTAL_HEIGHT }}
                   >
                     {/* Hour grid lines */}
                     {hourLabels.map((_, i) => (
                       <div
                         key={i}
-                        className="absolute left-0 right-0 border-t border-gray-800/60"
+                        className="absolute left-0 right-0 border-t border-bg-300/80"
                         style={{ top: i * HOUR_HEIGHT }}
                       />
                     ))}
@@ -358,7 +358,7 @@ export default function HeatmapOcupacion({ branchId }) {
                     {hourLabels.slice(0, -1).map((_, i) => (
                       <div
                         key={`half_${i}`}
-                        className="absolute left-0 right-0 border-t border-gray-800/30"
+                        className="absolute left-0 right-0 border-t border-bg-300/40"
                         style={{ top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
                       />
                     ))}
@@ -429,7 +429,7 @@ export default function HeatmapOcupacion({ branchId }) {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-xs text-primary-300">
         <span>Ocupación:</span>
         {[
           { label: '<25%', bg: '#1e3a8a' },
@@ -449,16 +449,16 @@ export default function HeatmapOcupacion({ branchId }) {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm shadow-2xl pointer-events-none min-w-48"
+          className="fixed z-50 bg-bg-200 border border-bg-300 rounded-xl p-3 text-sm shadow-2xl pointer-events-none min-w-48"
           style={{ left: tooltip.x + 14, top: tooltip.y - 120 }}
         >
-          <p className="font-semibold text-white mb-1.5">{tooltip.ev.name || 'Clase'}</p>
-          <p className="text-gray-400 text-xs mb-1">{tooltip.timeLabel} · {tooltip.ev.duration} min</p>
-          <div className="border-t border-gray-800 my-1.5" />
-          <p className="text-gray-300">Ocupación: <span className="text-white font-semibold">{tooltip.ev.pct}%</span></p>
-          <p className="text-gray-300">Reservas: <span className="text-white">{tooltip.ev.booked} / {tooltip.ev.capacity}</span></p>
+          <p className="font-semibold text-text-100 mb-1.5">{tooltip.ev.name || 'Clase'}</p>
+          <p className="text-text-200 text-xs mb-1">{tooltip.timeLabel} · {tooltip.ev.duration} min</p>
+          <div className="border-t border-bg-300 my-1.5" />
+          <p className="text-text-200">Ocupación: <span className="text-text-100 font-semibold">{tooltip.ev.pct}%</span></p>
+          <p className="text-text-200">Reservas: <span className="text-text-100">{tooltip.ev.booked} / {tooltip.ev.capacity}</span></p>
           {tooltip.ev.trainerName && (
-            <p className="text-gray-300">Instructor: <span className="text-white">{tooltip.ev.trainerName}</span></p>
+            <p className="text-text-200">Instructor: <span className="text-text-100">{tooltip.ev.trainerName}</span></p>
           )}
         </div>
       )}

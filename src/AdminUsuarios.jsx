@@ -18,11 +18,11 @@ const CENTROS = [
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h3 className="font-semibold text-white">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+      <div className="absolute inset-0 bg-text-100/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
+          <h3 className="font-semibold text-text-100">{title}</h3>
+          <button onClick={onClose} className="text-text-200 hover:text-text-100 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -44,8 +44,8 @@ function CentrosSelector({ selected, onChange }) {
       {CENTROS.map(c => (
         <label key={c.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
           selected.includes(c.id)
-            ? 'border-purple-500 bg-purple-900/30 text-white'
-            : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'
+            ? 'border-accent-100 bg-primary-100 text-text-100'
+            : 'border-primary-200 bg-white text-text-200 hover:border-accent-100'
         }`}>
           <input
             type="checkbox"
@@ -54,7 +54,7 @@ function CentrosSelector({ selected, onChange }) {
             className="hidden"
           />
           <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
-            selected.includes(c.id) ? 'bg-purple-500' : 'bg-gray-700'
+            selected.includes(c.id) ? 'bg-accent-200' : 'bg-primary-200'
           }`}>
             {selected.includes(c.id) && (
               <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,12 +202,12 @@ export default function AdminUsuarios() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-white">Gestión de usuarios</h2>
-          <p className="text-sm text-gray-400 mt-0.5">{usuarios.length} usuarios registrados</p>
+          <h2 className="text-xl font-bold text-text-100">Gestión de usuarios</h2>
+          <p className="text-sm text-text-200 mt-0.5">{usuarios.length} usuarios registrados</p>
         </div>
         <button
           onClick={() => setModal('invite')}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors"
+          className="flex items-center gap-2 bg-accent-200 hover:bg-accent-100 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -217,45 +217,44 @@ export default function AdminUsuarios() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-500 text-sm">Cargando...</div>
+        <div className="flex items-center justify-center h-48 text-primary-300 text-sm">Cargando...</div>
       ) : (
         <div className="space-y-2">
           {usuarios.map(u => (
-            <div key={u.id} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center gap-4">
-              {/* Avatar */}
-              <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center shrink-0 text-sm font-semibold text-gray-300">
+            <div key={u.id} className="bg-bg-200 border border-bg-300 rounded-xl px-5 py-4 flex items-center gap-4">
+              <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 text-sm font-semibold text-accent-200">
                 {(u.full_name || u.email || '?')[0].toUpperCase()}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium text-white truncate">{u.full_name || '—'}</p>
+                  <p className="text-sm font-medium text-text-100 truncate">{u.full_name || '—'}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
                     u.role === 'admin'
-                      ? 'bg-purple-900/50 border-purple-700 text-purple-300'
-                      : 'bg-gray-800 border-gray-700 text-gray-400'
+                      ? 'bg-primary-100 border-primary-200 text-accent-200'
+                      : 'bg-white border-primary-200 text-text-200'
                   }`}>
                     {u.role === 'admin' ? 'Admin' : 'Manager'}
                   </span>
                   {u.status === 'pending' && (
-                    <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 bg-amber-900/30 border-amber-700 text-amber-400">
+                    <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 bg-amber-50 border-amber-200 text-amber-700">
                       ⏳ Pendiente de aceptar
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 truncate mt-0.5">{u.email}</p>
+                <p className="text-xs text-primary-300 truncate mt-0.5">{u.email}</p>
                 {u.role === 'manager' && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {getCentroNames(u.branch_ids)?.map(name => (
-                      <span key={name} className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-md">
+                      <span key={name} className="text-xs bg-primary-100 text-text-200 px-2 py-0.5 rounded-md">
                         {name}
                       </span>
                     )) || <span className="text-xs text-red-400">Sin centros asignados</span>}
                   </div>
                 )}
                 {u.role === 'admin' && (
-                  <p className="text-xs text-gray-600 mt-1">Acceso a todos los centros</p>
+                  <p className="text-xs text-primary-300 mt-1">Acceso a todos los centros</p>
                 )}
               </div>
 
@@ -263,13 +262,13 @@ export default function AdminUsuarios() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => openEdit(u)}
-                  className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
+                  className="text-xs text-text-200 hover:text-text-100 border border-primary-200 hover:border-accent-100 rounded-lg px-3 py-1.5 transition-colors"
                 >
                   Editar
                 </button>
                 <button
                   onClick={() => openDelete(u)}
-                  className="text-xs text-red-500 hover:text-red-400 border border-red-900/50 hover:border-red-800 rounded-lg px-3 py-1.5 transition-colors"
+                  className="text-xs text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors"
                 >
                   Eliminar
                 </button>
@@ -284,33 +283,33 @@ export default function AdminUsuarios() {
         <Modal title="Invitar nuevo usuario" onClose={() => setModal(null)}>
           <form onSubmit={handleInvite} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Nombre completo</label>
+              <label className="block text-sm font-medium text-text-200 mb-1.5">Nombre completo</label>
               <input
                 type="text"
                 value={inviteName}
                 onChange={e => setInviteName(e.target.value)}
                 required
                 placeholder="Nombre Manager"
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                className="w-full bg-white border border-primary-200 text-text-100 rounded-lg px-3 py-2 text-sm placeholder-primary-200 focus:outline-none focus:border-accent-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-text-200 mb-1.5">Email</label>
               <input
                 type="email"
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
                 required
                 placeholder="manager@clubpilates.com"
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                className="w-full bg-white border border-primary-200 text-text-100 rounded-lg px-3 py-2 text-sm placeholder-primary-200 focus:outline-none focus:border-accent-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Rol</label>
+              <label className="block text-sm font-medium text-text-200 mb-1.5">Rol</label>
               <select
                 value={inviteRole}
                 onChange={e => setInviteRole(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
+                className="w-full bg-white border border-primary-200 text-text-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-100"
               >
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
@@ -318,7 +317,7 @@ export default function AdminUsuarios() {
             </div>
             {inviteRole === 'manager' && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Centros asignados</label>
+                <label className="block text-sm font-medium text-text-200 mb-1.5">Centros asignados</label>
                 <CentrosSelector selected={inviteBranches} onChange={setInviteBranches} />
                 {inviteBranches.length === 0 && (
                   <p className="text-xs text-amber-400 mt-2">⚠ Selecciona al menos un centro</p>
@@ -327,11 +326,11 @@ export default function AdminUsuarios() {
             )}
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => setModal(null)}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg py-2 text-sm transition-colors">
+                className="flex-1 bg-white hover:bg-primary-100 border border-primary-200 text-text-200 rounded-lg py-2 text-sm transition-colors">
                 Cancelar
               </button>
               <button type="submit" disabled={saving || (inviteRole === 'manager' && inviteBranches.length === 0)}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg py-2 text-sm font-medium transition-colors">
+                className="flex-1 bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white rounded-lg py-2 text-sm font-medium transition-colors">
                 {saving ? 'Enviando...' : 'Enviar invitación'}
               </button>
             </div>
@@ -344,11 +343,11 @@ export default function AdminUsuarios() {
         <Modal title={`Editar: ${selected.full_name || selected.email}`} onClose={() => setModal(null)}>
           <form onSubmit={handleEdit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Rol</label>
+              <label className="block text-sm font-medium text-text-200 mb-1.5">Rol</label>
               <select
                 value={editRole}
                 onChange={e => setEditRole(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
+                className="w-full bg-white border border-primary-200 text-text-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-100"
               >
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
@@ -356,7 +355,7 @@ export default function AdminUsuarios() {
             </div>
             {editRole === 'manager' && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Centros asignados</label>
+                <label className="block text-sm font-medium text-text-200 mb-1.5">Centros asignados</label>
                 <CentrosSelector selected={editBranches} onChange={setEditBranches} />
                 {editBranches.length === 0 && (
                   <p className="text-xs text-amber-400 mt-2">⚠ Selecciona al menos un centro</p>
@@ -365,11 +364,11 @@ export default function AdminUsuarios() {
             )}
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => setModal(null)}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg py-2 text-sm transition-colors">
+                className="flex-1 bg-white hover:bg-primary-100 border border-primary-200 text-text-200 rounded-lg py-2 text-sm transition-colors">
                 Cancelar
               </button>
               <button type="submit" disabled={saving || (editRole === 'manager' && editBranches.length === 0)}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg py-2 text-sm font-medium transition-colors">
+                className="flex-1 bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white rounded-lg py-2 text-sm font-medium transition-colors">
                 {saving ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
@@ -380,15 +379,15 @@ export default function AdminUsuarios() {
       {/* Modal Eliminar */}
       {modal === 'delete' && selected && (
         <Modal title="Eliminar usuario" onClose={() => setModal(null)}>
-          <p className="text-gray-300 text-sm mb-1">
-            ¿Seguro que quieres eliminar a <span className="text-white font-medium">{selected.full_name || selected.email}</span>?
+          <p className="text-text-200 text-sm mb-1">
+            ¿Seguro que quieres eliminar a <span className="text-text-100 font-medium">{selected.full_name || selected.email}</span>?
           </p>
-          <p className="text-gray-500 text-xs mb-5">
+          <p className="text-primary-300 text-xs mb-5">
             Se eliminará su perfil y acceso. Esta acción no se puede deshacer.
           </p>
           <div className="flex gap-3">
             <button onClick={() => setModal(null)}
-              className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg py-2 text-sm transition-colors">
+              className="flex-1 bg-white hover:bg-primary-100 border border-primary-200 text-text-200 rounded-lg py-2 text-sm transition-colors">
               Cancelar
             </button>
             <button onClick={handleDelete} disabled={saving}
@@ -403,8 +402,8 @@ export default function AdminUsuarios() {
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-xl border ${
           toast.type === 'error'
-            ? 'bg-red-900 border-red-700 text-red-200'
-            : 'bg-green-900 border-green-700 text-green-200'
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : 'bg-green-50 border-green-200 text-green-700'
         }`}>
           {toast.msg}
         </div>

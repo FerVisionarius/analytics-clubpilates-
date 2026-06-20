@@ -12,8 +12,8 @@ import AdminUsuarios from './AdminUsuarios'
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-bg-100 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
     </div>
   )
   if (!user) return <Navigate to="/login" replace />
@@ -33,8 +33,8 @@ function RootRedirect() {
   }, [loading, isAdmin, allowedBranchIds])
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-bg-100 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 }
@@ -56,8 +56,8 @@ function AdminRootRedirect() {
   }, [loading, isAdmin])
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-bg-100 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 }
@@ -73,8 +73,8 @@ function AppRoutes() {
   }, [])
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-bg-100 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -111,7 +111,7 @@ function OcupacionPage() {
   const { branchId } = useParams()
   return (
     <div>
-      <h2 className="text-xl font-bold text-white mb-6">Ocupación de clases</h2>
+      <h2 className="text-xl font-bold text-text-100 mb-6">Ocupación de clases</h2>
       <HeatmapOcupacion branchId={branchId} />
     </div>
   )
