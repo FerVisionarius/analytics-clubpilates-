@@ -39,14 +39,63 @@ function getMadridTime(utcDate) {
   return new Date(d.getTime() + diff)
 }
 
-function getOccupancyColor(pct) {
-  if (pct < 25) return { bg: 'rgba(30,58,138,0.85)', border: '#1e3a8a', text: '#93c5fd' }
-  if (pct < 50) return { bg: 'rgba(29,78,216,0.85)', border: '#1d4ed8', text: '#bfdbfe' }
-  if (pct < 70) return { bg: 'rgba(37,99,235,0.9)', border: '#2563eb', text: '#dbeafe' }
-  if (pct < 85) return { bg: 'rgba(109,40,217,0.9)', border: '#6d28d9', text: '#e9d5ff' }
-  if (pct < 95) return { bg: 'rgba(124,58,237,0.9)', border: '#7c3aed', text: '#ede9fe' }
-  return { bg: 'rgba(192,38,211,0.9)', border: '#c026d3', text: '#fce7f3' }
+const OCCUPANCY_RED = '#dd0025'
+const OCCUPANCY_YELLOW = '#FFD700'
+const OCCUPANCY_GREEN = '#1DB954'
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '')
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  }
 }
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b]
+    .map(v => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function lerpColor(from, to, t) {
+  const a = hexToRgb(from)
+  const b = hexToRgb(to)
+  return rgbToHex(
+    a.r + (b.r - a.r) * t,
+    a.g + (b.g - a.g) * t,
+    a.b + (b.b - a.b) * t,
+  )
+}
+
+function darkenHex(hex, amount = 0.18) {
+  const { r, g, b } = hexToRgb(hex)
+  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount))
+}
+
+function getContrastText(hex) {
+  const { r, g, b } = hexToRgb(hex)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.62 ? '#1d1c1c' : '#ffffff'
+}
+
+/** Escala 0–2% rojo → 50% amarillo → 100% verde, cuantizada cada 2% */
+function occupancyHex(pct) {
+  const step = Math.min(100, Math.max(0, Math.round(pct / 2) * 2))
+  if (step <= 2) return OCCUPANCY_RED
+  if (step <= 50) return lerpColor(OCCUPANCY_RED, OCCUPANCY_YELLOW, (step - 2) / (50 - 2))
+  return lerpColor(OCCUPANCY_YELLOW, OCCUPANCY_GREEN, (step - 50) / (100 - 50))
+}
+
+function getOccupancyColor(pct) {
+  const bg = occupancyHex(pct)
+  return { bg, border: darkenHex(bg), text: getContrastText(bg) }
+}
+
+const OCCUPANCY_GRADIENT = Array.from({ length: 51 }, (_, i) => {
+  const pct = i * 2
+  return `${occupancyHex(pct)} ${pct}%`
+}).join(', ')
 
 // Detect overlapping events and assign column layout
 function overlaps(a, b) {
@@ -477,18 +526,23 @@ export default function HeatmapOcupacion({ branchId }) {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-2 text-xs text-primary-300">
+      <div className="flex items-center gap-3 text-xs text-primary-300 flex-wrap">
         <span>Ocupación:</span>
+        <div className="flex items-center gap-2">
+          <span>0%</span>
+          <div
+            className="h-3 w-56 rounded-sm border border-bg-300"
+            style={{ background: `linear-gradient(to right, ${OCCUPANCY_GRADIENT})` }}
+          />
+          <span>100%</span>
+        </div>
         {[
-          { label: '<25%', bg: '#1e3a8a' },
-          { label: '<50%', bg: '#1d4ed8' },
-          { label: '<70%', bg: '#2563eb' },
-          { label: '<85%', bg: '#6d28d9' },
-          { label: '<95%', bg: '#7c3aed' },
-          { label: '100%', bg: '#c026d3' },
-        ].map(({ label, bg }) => (
+          { label: '0–2%', pct: 0 },
+          { label: '50%', pct: 50 },
+          { label: '100%', pct: 100 },
+        ].map(({ label, pct }) => (
           <div key={label} className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ background: bg }} />
+            <div className="w-3 h-3 rounded-sm border border-bg-300/50" style={{ background: occupancyHex(pct) }} />
             <span>{label}</span>
           </div>
         ))}
