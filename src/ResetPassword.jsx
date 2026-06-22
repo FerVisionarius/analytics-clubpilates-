@@ -1,6 +1,32 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
+
+async function establishAuthSession() {
+  const code = new URLSearchParams(window.location.search).get('code')
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) return { ok: false, error }
+    window.history.replaceState({}, document.title, window.location.pathname)
+    return { ok: true }
+  }
+
+  const hasHashToken = window.location.hash.includes('access_token')
+  if (hasHashToken) {
+    await new Promise(resolve => setTimeout(resolve, 150))
+  }
+
+  const { data: { session }, error } = await supabase.auth.getSession()
+  if (error) return { ok: false, error }
+  if (session) {
+    if (hasHashToken) {
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+    return { ok: true }
+  }
+
+  return { ok: false }
+}
 
 export default function ResetPassword({ isInvite = false }) {
   const [password, setPassword] = useState('')
@@ -8,31 +34,66 @@ export default function ResetPassword({ isInvite = false }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
+  const [sessionLoading, setSessionLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-        // listo para cambiar contraseña
-      }
-    })
     document.title = isInvite
       ? 'Club Pilates - Configurar contraseña'
       : 'Club Pilates - Restablecer contraseña'
+
+    let cancelled = false
+
+    async function initSession() {
+      const result = await establishAuthSession()
+      if (cancelled) return
+      if (result.ok) {
+        setSessionReady(true)
+        setSessionLoading(false)
+      }
+    }
+
+    initSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return
+      if (session && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        setSessionReady(true)
+        setSessionLoading(false)
+      }
+    })
+
+    const timeout = setTimeout(() => {
+      if (!cancelled) setSessionLoading(false)
+    }, 5000)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [isInvite])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
+    if (!sessionReady) {
+      setError('El enlace ha expirado o no es válido. Solicita uno nuevo.')
+      return
+    }
+
     if (password.length < 6) return setError('Mínimo 6 caracteres')
     if (password !== confirm) return setError('Las contraseñas no coinciden')
+
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
-    if (error) {
-      setError('Error al actualizar: ' + error.message)
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+    if (updateError) {
+      setError('Error al actualizar: ' + updateError.message)
     } else {
       setDone(true)
-      setTimeout(() => navigate('/'), 2000)
+      setTimeout(() => navigate('/login', { replace: true }), 2000)
     }
     setLoading(false)
   }
@@ -53,10 +114,27 @@ export default function ResetPassword({ isInvite = false }) {
         </div>
 
         <div className="bg-bg-200 border border-bg-300 rounded-2xl p-6">
-          {done ? (
+          {sessionLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : done ? (
             <div className="text-center py-4">
               <div className="text-green-700 text-lg font-medium mb-2">✓ Contraseña actualizada</div>
-              <p className="text-text-200 text-sm">Redirigiendo al dashboard...</p>
+              <p className="text-text-200 text-sm">Redirigiendo al inicio de sesión...</p>
+            </div>
+          ) : !sessionReady ? (
+            <div className="text-center py-2">
+              <p className="text-text-100 font-medium mb-2">Enlace no válido o expirado</p>
+              <p className="text-text-200 text-sm mb-4">
+                Solicita un nuevo enlace para restablecer tu contraseña.
+              </p>
+              <Link
+                to="/forgot-password"
+                className="text-sm text-accent-200 hover:text-accent-100 transition-colors"
+              >
+                Solicitar nuevo enlace
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

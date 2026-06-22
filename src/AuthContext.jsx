@@ -51,11 +51,15 @@ export function AuthProvider({ children }) {
       })
 
     // Diferir callbacks async evita deadlock con signInWithPassword (documentado por Supabase)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setTimeout(() => {
         if (cancelled) return
         setUser(session?.user ?? null)
         if (session?.user) {
+          if (event === 'PASSWORD_RECOVERY') {
+            setLoading(false)
+            return
+          }
           setLoading(true)
           fetchProfile()
         } else {

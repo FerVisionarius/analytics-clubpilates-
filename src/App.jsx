@@ -73,8 +73,14 @@ function AppRoutes() {
     const hash = window.location.hash
     if (hash.includes('type=invite') || hash.includes('type=signup')) {
       window.location.replace('/set-password' + hash)
+    } else if (hash.includes('type=recovery') && location.pathname !== '/reset-password') {
+      window.location.replace('/reset-password' + hash)
     }
-  }, [])
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (code && location.pathname !== '/reset-password' && location.pathname !== '/set-password') {
+      window.location.replace('/reset-password' + window.location.search)
+    }
+  }, [location.pathname])
 
   if (loading && !isPublicRoute) {
     return (
