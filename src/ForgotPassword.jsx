@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from './lib/supabase'
+import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_KEY } from './lib/supabase'
+import { mapPasswordResetEmailError } from './lib/authRecovery'
 import logo from './assets/logo-clubpilates.png'
 
 export default function ForgotPassword() {
@@ -18,25 +19,38 @@ export default function ForgotPassword() {
     setError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
+    const redirectTo = `${window.location.origin}/reset-password`
 
-    if (error) {
-      if (
-        error.status === 429 ||
-        error.code === 'over_email_send_rate_limit' ||
-        error.message?.toLowerCase().includes('rate limit')
-      ) {
-        setError('Has solicitado demasiados enlaces. Supabase limita los envíos: espera unos 60 minutos e inténtalo de nuevo.')
-      } else if (error.message?.toLowerCase().includes('redirect')) {
-        setError('Error de configuración del enlace de recuperación. Contacta con el administrador.')
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/request-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ email, redirectTo }),
+      })
+
+      const body = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setError(mapPasswordResetEmailError(
+          { message: body.error, status: response.status },
+          body.code,
+        ))
       } else {
-        setError(`No se pudo enviar el email: ${error.message}`)
+        setSent(true)
       }
-    } else {
-      setSent(true)
+    } catch {
+      // Fallback si la edge function no está desplegada
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+      if (resetError) {
+        setError(mapPasswordResetEmailError(resetError, resetError.code))
+      } else {
+        setSent(true)
+      }
     }
+
     setLoading(false)
   }
 

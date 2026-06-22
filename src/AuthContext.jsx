@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from './lib/supabase'
+import { isAuthRecoveryRoute } from './lib/authRecovery'
 
 const AuthContext = createContext(null)
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutos
@@ -40,8 +41,12 @@ export function AuthProvider({ children }) {
         if (cancelled) return
         clearTimeout(initTimeout)
         setUser(session?.user ?? null)
-        if (session?.user) fetchProfile()
-        else setLoading(false)
+        if (session?.user) {
+          if (isAuthRecoveryRoute()) setLoading(false)
+          else fetchProfile()
+        } else {
+          setLoading(false)
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -56,7 +61,7 @@ export function AuthProvider({ children }) {
         if (cancelled) return
         setUser(session?.user ?? null)
         if (session?.user) {
-          if (event === 'PASSWORD_RECOVERY') {
+          if (event === 'PASSWORD_RECOVERY' || isAuthRecoveryRoute()) {
             setLoading(false)
             return
           }
@@ -93,7 +98,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    if (!user) {
+    if (!user || isAuthRecoveryRoute()) {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current)
         inactivityTimerRef.current = null

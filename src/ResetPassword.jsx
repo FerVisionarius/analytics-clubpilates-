@@ -1,49 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
-
-function clearAuthFromUrl() {
-  window.history.replaceState({}, document.title, window.location.pathname)
-}
-
-async function establishAuthSession() {
-  // Flujo PKCE: ?code=...
-  const code = new URLSearchParams(window.location.search).get('code')
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) return { ok: false, error }
-    clearAuthFromUrl()
-    return { ok: true }
-  }
-
-  // Flujo implícito: #access_token=...&refresh_token=...&type=recovery
-  const hash = window.location.hash.replace(/^#/, '')
-  if (hash) {
-    const hashParams = new URLSearchParams(hash)
-    const accessToken = hashParams.get('access_token')
-    const refreshToken = hashParams.get('refresh_token')
-    if (accessToken && refreshToken) {
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      })
-      if (error) return { ok: false, error }
-      clearAuthFromUrl()
-      return { ok: true }
-    }
-  }
-
-  // Fallback: el cliente puede haber parseado la URL al iniciar
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const { data: { session }, error } = await supabase.auth.getSession()
-  if (error) return { ok: false, error }
-  if (session) {
-    if (window.location.hash) clearAuthFromUrl()
-    return { ok: true }
-  }
-
-  return { ok: false }
-}
+import { establishRecoverySession } from './lib/authRecovery'
 
 export default function ResetPassword({ isInvite = false }) {
   const [password, setPassword] = useState('')
@@ -63,11 +21,11 @@ export default function ResetPassword({ isInvite = false }) {
     let cancelled = false
 
     async function initSession() {
-      let result = await establishAuthSession()
+      let result = await establishRecoverySession()
       if (cancelled) return
 
       if (!result.ok) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 600))
         const { data: { session } } = await supabase.auth.getSession()
         if (session) result = { ok: true }
       }
@@ -91,7 +49,7 @@ export default function ResetPassword({ isInvite = false }) {
 
     const timeout = setTimeout(() => {
       if (!cancelled) setSessionLoading(false)
-    }, 5000)
+    }, 6000)
 
     return () => {
       cancelled = true
@@ -117,6 +75,7 @@ export default function ResetPassword({ isInvite = false }) {
     if (updateError) {
       setError('Error al actualizar: ' + updateError.message)
     } else {
+      await supabase.auth.signOut()
       setDone(true)
       setTimeout(() => navigate('/login', { replace: true }), 2000)
     }
