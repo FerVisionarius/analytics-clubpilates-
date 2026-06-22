@@ -23,12 +23,16 @@ export default function ForgotPassword() {
     })
 
     if (error) {
-      if (error.message?.includes('rate limit') || error.status === 429) {
-        setError('Has solicitado demasiados enlaces. Espera unos minutos e inténtalo de nuevo.')
-      } else if (error.message?.includes('redirect')) {
+      if (
+        error.status === 429 ||
+        error.code === 'over_email_send_rate_limit' ||
+        error.message?.toLowerCase().includes('rate limit')
+      ) {
+        setError('Has solicitado demasiados enlaces. Supabase limita los envíos: espera unos 60 minutos e inténtalo de nuevo.')
+      } else if (error.message?.toLowerCase().includes('redirect')) {
         setError('Error de configuración del enlace de recuperación. Contacta con el administrador.')
       } else {
-        setError('No se pudo enviar el email. Comprueba la dirección e inténtalo de nuevo.')
+        setError(`No se pudo enviar el email: ${error.message}`)
       }
     } else {
       setSent(true)
