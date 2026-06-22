@@ -23,7 +23,13 @@ export default function ForgotPassword() {
     })
 
     if (error) {
-      setError('No se pudo enviar el email. Comprueba la dirección e inténtalo de nuevo.')
+      if (error.message?.includes('rate limit') || error.status === 429) {
+        setError('Has solicitado demasiados enlaces. Espera unos minutos e inténtalo de nuevo.')
+      } else if (error.message?.includes('redirect')) {
+        setError('Error de configuración del enlace de recuperación. Contacta con el administrador.')
+      } else {
+        setError('No se pudo enviar el email. Comprueba la dirección e inténtalo de nuevo.')
+      }
     } else {
       setSent(true)
     }
