@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './AuthContext'
 import LoginPage from './LoginPage'
 import CentroLayout from './CentroLayout'
@@ -65,6 +65,8 @@ function AdminRootRedirect() {
 
 function AppRoutes() {
   const { user, loading, isAdmin, allowedBranchIds } = useAuth()
+  const location = useLocation()
+  const isPublicRoute = ['/login', '/reset-password', '/set-password'].includes(location.pathname)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -73,15 +75,17 @@ function AppRoutes() {
     }
   }, [])
 
-  if (loading) return (
-    <div className="min-h-screen bg-bg-100 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
+  if (loading && !isPublicRoute) {
+    return (
+      <div className="min-h-screen bg-bg-100 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={!loading && user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/set-password" element={<ResetPassword isInvite />} />
 
