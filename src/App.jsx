@@ -85,7 +85,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={!loading && user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/set-password" element={<ResetPassword isInvite />} />
 

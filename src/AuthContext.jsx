@@ -10,20 +10,10 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const inactivityTimerRef = useRef(null)
-  const profileFetchRef = useRef(0)
 
   async function fetchProfile() {
-    const fetchId = ++profileFetchRef.current
-    try {
-      const { data, error } = await supabase.rpc('get_my_profile')
-      if (fetchId !== profileFetchRef.current) return
-
-      if (error || !data) {
-        setProfile(null)
-        await supabase.auth.signOut()
-        return
-      }
-
+    const { data, error } = await supabase.rpc('get_my_profile')
+    if (!error && data) {
       setProfile(data)
       if (data.status === 'pending') {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -34,16 +24,8 @@ export function AuthProvider({ children }) {
             .eq('id', currentUser.id)
         }
       }
-    } catch {
-      if (fetchId === profileFetchRef.current) {
-        setProfile(null)
-        await supabase.auth.signOut()
-      }
-    } finally {
-      if (fetchId === profileFetchRef.current) {
-        setLoading(false)
-      }
     }
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -68,17 +50,19 @@ export function AuthProvider({ children }) {
         }
       })
 
+    // Diferir callbacks async evita deadlock con signInWithPassword (documentado por Supabase)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (cancelled) return
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        setLoading(true)
-        fetchProfile()
-      } else {
-        profileFetchRef.current++
-        setProfile(null)
-        setLoading(false)
-      }
+      setTimeout(() => {
+        if (cancelled) return
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          setLoading(true)
+          fetchProfile()
+        } else {
+          setProfile(null)
+          setLoading(false)
+        }
+      }, 0)
     })
 
     return () => {
@@ -94,7 +78,6 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    profileFetchRef.current++
     await supabase.auth.signOut()
   }
 

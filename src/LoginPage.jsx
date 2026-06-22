@@ -17,9 +17,12 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await signIn(email, password)
-    if (error) setError('Email o contraseña incorrectos')
-    setLoading(false)
+    try {
+      const { error } = await signIn(email, password)
+      if (error) setError('Email o contraseña incorrectos')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
