@@ -46,16 +46,24 @@ export async function establishRecoverySession() {
 }
 
 export function mapPasswordResetEmailError(error, code) {
+  const message = error?.message ?? ''
+
+  if (message.includes('API key is invalid') || message.includes('validation_error')) {
+    return 'El servicio de email no está configurado correctamente. Contacta con el administrador.'
+  }
   if (
     error?.status === 429 ||
     code === 'over_email_send_rate_limit' ||
-    error?.message?.toLowerCase().includes('rate limit')
+    message.toLowerCase().includes('rate limit')
   ) {
-    return 'El servicio de emails está saturado (límite del plan de Supabase: ~3 emails/hora para todo el proyecto). Espera unos 60 minutos o configura SMTP/Resend en Supabase.'
+    return 'El servicio de emails está saturado. Espera unos 60 minutos e inténtalo de nuevo.'
   }
-  if (error?.message?.toLowerCase().includes('redirect')) {
+  if (message.toLowerCase().includes('redirect')) {
     return 'La URL de redirección no está autorizada en Supabase. Contacta con el administrador.'
   }
-  if (error?.message) return error.message
+  if (message.startsWith('Error al enviar email:')) {
+    return 'No se pudo enviar el email. Contacta con el administrador.'
+  }
+  if (message) return message
   return 'No se pudo enviar el email. Inténtalo de nuevo más tarde.'
 }

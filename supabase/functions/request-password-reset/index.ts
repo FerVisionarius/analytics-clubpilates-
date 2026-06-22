@@ -24,8 +24,9 @@ serve(async (req) => {
       options: { redirectTo },
     })
 
-    // No revelar si el email existe o no
+    // Por seguridad respondemos ok aunque el usuario no exista
     if (error || !data?.properties?.action_link) {
+      console.error('generateLink falló:', error?.message ?? 'sin action_link', { email })
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -44,7 +45,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           from: fromEmail,
-          to: email,
+          to: [email],
           subject: 'Restablecer contraseña - Club Pilates Analytics',
           html: `
             <p>Hola,</p>
@@ -56,10 +57,12 @@ serve(async (req) => {
         }),
       })
 
+      const resBody = await res.text()
       if (!res.ok) {
-        const body = await res.text()
-        throw new Error(`Error al enviar email: ${body}`)
+        console.error('Resend falló:', res.status, resBody)
+        throw new Error(`Error al enviar email: ${resBody}`)
       }
+      console.log('Email enviado vía Resend:', { email, resendId: resBody })
     } else {
       // Sin Resend: usar SMTP de Supabase (sujeto a límite del plan)
       const { error: recoverError } = await supabaseAdmin.auth.resetPasswordForEmail(email, { redirectTo })
