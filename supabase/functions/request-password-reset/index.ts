@@ -33,8 +33,13 @@ serve(async (req) => {
     }
 
     const actionLink = data.properties.action_link
-    const resendKey = Deno.env.get('RESEND_API_KEY')
+    const resendKey = (Deno.env.get('RESEND_API_KEY') ?? '').trim()
     const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Club Pilates <onboarding@resend.dev>'
+
+    if (!resendKey.startsWith('re_')) {
+      console.error('RESEND_API_KEY inválida o no configurada')
+      throw new Error('RESEND_API_KEY no configurada correctamente en Supabase')
+    }
 
     if (resendKey) {
       const res = await fetch('https://api.resend.com/emails', {
