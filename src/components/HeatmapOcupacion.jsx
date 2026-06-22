@@ -136,6 +136,25 @@ const OCCUPANCY_GRADIENT = Array.from({ length: 51 }, (_, i) => {
   return `${occupancyHex(pct)} ${pct}%`
 }).join(', ')
 
+const TOOLTIP_WIDTH = 208
+const TOOLTIP_GAP = 14
+const VIEWPORT_MARGIN = 12
+
+function getTooltipPosition(clientX, clientY, hasTrainer) {
+  const height = hasTrainer ? 158 : 138
+
+  let left = clientX + TOOLTIP_GAP
+  if (left + TOOLTIP_WIDTH > window.innerWidth - VIEWPORT_MARGIN) {
+    left = clientX - TOOLTIP_WIDTH - TOOLTIP_GAP
+  }
+  left = Math.max(VIEWPORT_MARGIN, Math.min(left, window.innerWidth - TOOLTIP_WIDTH - VIEWPORT_MARGIN))
+
+  let top = clientY - height * 0.65
+  top = Math.max(VIEWPORT_MARGIN, Math.min(top, window.innerHeight - height - VIEWPORT_MARGIN))
+
+  return { left, top }
+}
+
 // Detect overlapping events and assign column layout
 function overlaps(a, b) {
   return a.startMin < b.startMin + b.duration && a.startMin + a.duration > b.startMin
@@ -669,10 +688,12 @@ export default function HeatmapOcupacion({ branchId }) {
       </div>
 
       {/* Tooltip */}
-      {tooltip && (
+      {tooltip && (() => {
+        const pos = getTooltipPosition(tooltip.x, tooltip.y, !!tooltip.ev.trainerName)
+        return (
         <div
-          className="fixed z-50 bg-bg-200 border border-bg-300 rounded-xl p-3 text-sm shadow-2xl pointer-events-none min-w-48"
-          style={{ left: tooltip.x + 14, top: tooltip.y - 120 }}
+          className="fixed z-50 bg-bg-200 border border-bg-300 rounded-xl p-3 text-sm shadow-2xl pointer-events-none w-52"
+          style={{ left: pos.left, top: pos.top }}
         >
           <p className="font-semibold text-text-100 mb-1.5">{tooltip.ev.name || 'Clase'}</p>
           <p className="text-text-200 text-xs mb-1">{tooltip.timeLabel} · {tooltip.ev.duration} min</p>
@@ -684,7 +705,8 @@ export default function HeatmapOcupacion({ branchId }) {
           )}
           <p className="text-text-200 text-xs mt-2 text-accent-200">Clic para ver reservas</p>
         </div>
-      )}
+        )
+      })()}
 
       {/* Modal reservas */}
       {classModal && (

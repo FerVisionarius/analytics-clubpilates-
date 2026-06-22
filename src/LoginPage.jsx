@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import logo from './assets/logo-clubpilates.png'
 
@@ -46,7 +47,15 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-200 mb-1.5">Contraseña</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-text-200">Contraseña</label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-accent-200 hover:text-accent-100 transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}

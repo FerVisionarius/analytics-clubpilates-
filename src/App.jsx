@@ -8,6 +8,7 @@ import HeatmapOcupacion from './components/HeatmapOcupacion'
 import Laserr from './components/Laserr'
 import ComingSoon from './ComingSoon'
 import ResetPassword from './ResetPassword'
+import ForgotPassword from './ForgotPassword'
 import AdminUsuarios from './AdminUsuarios'
 
 function ProtectedRoute({ children }) {
@@ -66,7 +67,7 @@ function AdminRootRedirect() {
 function AppRoutes() {
   const { user, loading, isAdmin, allowedBranchIds } = useAuth()
   const location = useLocation()
-  const isPublicRoute = ['/login', '/reset-password', '/set-password'].includes(location.pathname)
+  const isPublicRoute = ['/login', '/forgot-password', '/reset-password', '/set-password'].includes(location.pathname)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -86,6 +87,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/set-password" element={<ResetPassword isInvite />} />
 
