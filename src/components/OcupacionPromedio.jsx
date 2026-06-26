@@ -11,7 +11,6 @@ const TOTAL_HOURS = END_HOUR - START_HOUR
 const TOTAL_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT
 
 const TOLERANCE_MIN = 15
-const STORAGE_KEY = 'ocupacionPromedio_range'
 
 const OCCUPANCY_RED = '#dd0025'
 const OCCUPANCY_YELLOW = '#FFD700'
@@ -91,9 +90,13 @@ function defaultRange() {
   return { start: formatDateInput(start), end: formatDateInput(end) }
 }
 
-function loadStoredRange() {
+function storageKey(branchId) {
+  return `ocupacionPromedio_range_${branchId}`
+}
+
+function loadStoredRange(branchId) {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
+    const raw = sessionStorage.getItem(storageKey(branchId))
     if (!raw) return defaultRange()
     const parsed = JSON.parse(raw)
     if (parsed?.start && parsed?.end) return parsed
@@ -111,14 +114,20 @@ function minutesToPx(minutes) {
   return (minutes / 60) * HOUR_HEIGHT
 }
 
+function dayLabelFromNum(dayNum) {
+  // DIAS_NUM = [1,2,3,4,5,6,0] -> índice en DIAS = ['Lun',...,'Dom']
+  const idx = DIAS_NUM.indexOf(dayNum)
+  return DIAS[idx]
+}
+
 /**
  * Agrupa clases por (día de semana, nombre, slot horario). El event_id cambia
  * cada semana en Glofox, así que la identidad de "misma clase recurrente" se
  * basa en día + nombre + hora aproximada (±15 min de tolerancia). La clase se
  * asigna al slot ya existente más cercano si cae dentro de tolerancia; si no,
  * abre un slot nuevo. El slot guarda su hora "habitual" (anchorMinutes de la
- * primera sesión vista), así que un desplazamiento puntual de una repetición
- * no mueve la posición visual del grupo entero.
+ * primera sesión vista) y la lista de sesiones individuales que lo componen,
+ * para poder mostrar el desglose semana por semana al hacer click.
  */
 function groupClasses(classes) {
   const groups = {}
@@ -141,12 +150,13 @@ function groupClasses(classes) {
 
     if (!slot) {
       slot = {
-        anchorMinutes: minutesOfDay, // hora habitual del grupo, fijada por la primera sesión vista
+        anchorMinutes: minutesOfDay,
         name,
         dayNum,
         sumBooked: 0,
         sumCapacity: 0,
         count: 0,
+        sessions: [],
       }
       slots.push(slot)
     }
@@ -154,28 +164,35 @@ function groupClasses(classes) {
     slot.sumBooked += c.booked_count || 0
     slot.sumCapacity += c.capacity || 0
     slot.count += 1
+    slot.sessions.push({
+      scheduledAt: c.scheduled_at,
+      booked: c.booked_count || 0,
+      capacity: c.capacity || 0,
+      madridTime,
+    })
   })
 
   return groups
 }
 
+function formatSessionDate(madridTime) {
+  return madridTime.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
 export default function OcupacionPromedio({ branchId }) {
-  const [range, setRange] = useState(loadStoredRange)
+  const [range, setRange] = useState(() => loadStoredRange(branchId))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [groupedSlots, setGroupedSlots] = useState({})
+  const [detailModal, setDetailModal] = useState(null)
 
   useEffect(() => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(range))
-  }, [range])
+    setRange(loadStoredRange(branchId))
+  }, [branchId])
 
-  // Limpia el rango guardado al salir de esta sección, para que no persista
-  // al navegar a otra parte del dashboard (solo persiste mientras estás aquí)
   useEffect(() => {
-    return () => {
-      sessionStorage.removeItem(STORAGE_KEY)
-    }
-  }, [])
+    sessionStorage.setItem(storageKey(branchId), JSON.stringify(range))
+  }, [branchId, range])
 
   useEffect(() => {
     fetchData()
@@ -323,7 +340,7 @@ export default function OcupacionPromedio({ branchId }) {
                       return (
                         <div
                           key={`${s.name}_${s.anchorMinutes}_${i}`}
-                          className="absolute rounded overflow-hidden"
+                          className="absolute rounded overflow-hidden cursor-pointer transition-all duration-150 hover:brightness-110 hover:z-10 hover:shadow-lg"
                           style={{
                             top: top + 2,
                             height,
@@ -332,6 +349,7 @@ export default function OcupacionPromedio({ branchId }) {
                             background: colors.bg,
                             borderLeft: `3px solid ${colors.border}`,
                           }}
+                          onClick={() => setDetailModal({ dayNum, slot: s })}
                         >
                           <div className="px-1.5 py-1 h-full flex flex-col justify-start overflow-hidden">
                             <p className="text-xs font-semibold leading-tight truncate" style={{ color: colors.text }}>
@@ -366,6 +384,50 @@ export default function OcupacionPromedio({ branchId }) {
           <span>100%</span>
         </div>
       </div>
+
+      {/* Modal de desglose por sesión, para verificar el cálculo del promedio */}
+      {detailModal && (
+        <div
+          className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
+          onClick={() => setDetailModal(null)}
+        >
+          <div
+            className="bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
+              <div>
+                <h3 className="text-text-100 font-semibold">{detailModal.slot.name}</h3>
+                <p className="text-xs text-text-200 mt-0.5">
+                  {dayLabelFromNum(detailModal.dayNum)} · {formatHour(detailModal.slot.anchorMinutes)}
+                </p>
+              </div>
+              <button
+                onClick={() => setDetailModal(null)}
+                className="text-text-200 hover:text-text-100 transition-colors text-lg leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+              {detailModal.slot.sessions
+                .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
+                .map((sess, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm border-b border-bg-300/60 pb-2 last:border-b-0">
+                    <span className="text-text-100">{dayLabelFromNum(detailModal.dayNum)} {formatSessionDate(sess.madridTime)}</span>
+                    <span className="text-text-200">{sess.booked}/{sess.capacity}</span>
+                  </div>
+                ))}
+              <div className="flex items-center justify-between text-sm font-semibold pt-2 border-t border-bg-300">
+                <span className="text-text-100">Total</span>
+                <span className="text-text-100">
+                  {detailModal.slot.sumBooked}/{detailModal.slot.sumCapacity} ({detailModal.slot.pct}%)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

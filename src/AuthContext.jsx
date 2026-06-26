@@ -87,6 +87,9 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
+    Object.keys(sessionStorage)
+      .filter(k => k.startsWith('ocupacionPromedio_range_'))
+      .forEach(k => sessionStorage.removeItem(k))
     await supabase.auth.signOut()
   }
 
