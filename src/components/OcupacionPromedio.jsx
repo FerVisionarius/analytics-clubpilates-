@@ -4,8 +4,14 @@ import { supabase } from '../lib/supabase'
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const DIAS_NUM = [1, 2, 3, 4, 5, 6, 0]
 
-const SLOT_MINUTES = 15
+const HOUR_HEIGHT = 64
+const START_HOUR = 7
+const END_HOUR = 22
+const TOTAL_HOURS = END_HOUR - START_HOUR
+const TOTAL_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT
+
 const TOLERANCE_MIN = 15
+const STORAGE_KEY = 'ocupacionPromedio_range'
 
 const OCCUPANCY_RED = '#dd0025'
 const OCCUPANCY_YELLOW = '#FFD700'
@@ -47,7 +53,6 @@ function getContrastText(hex) {
   return luminance > 0.62 ? '#1d1c1c' : '#ffffff'
 }
 
-/** Misma escala que HeatmapOcupacion: 0–2% rojo → 50% amarillo → 100% verde */
 function occupancyHex(pct) {
   const step = Math.min(100, Math.max(0, Math.round(pct / 2) * 2))
   if (step <= 2) return OCCUPANCY_RED
@@ -86,15 +91,36 @@ function defaultRange() {
   return { start: formatDateInput(start), end: formatDateInput(end) }
 }
 
+function loadStoredRange() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return defaultRange()
+    const parsed = JSON.parse(raw)
+    if (parsed?.start && parsed?.end) return parsed
+    return defaultRange()
+  } catch {
+    return defaultRange()
+  }
+}
+
+function timeToMinutes(h, m) {
+  return (h - START_HOUR) * 60 + m
+}
+
+function minutesToPx(minutes) {
+  return (minutes / 60) * HOUR_HEIGHT
+}
+
 /**
- * Agrupa clases por (día de semana, nombre, slot horario redondeado a bloques
- * de 15 min). Como el event_id cambia cada semana en Glofox y la hora puede
- * variar ligeramente entre repeticiones, se usa un slot aproximado: la clase
- * se asigna al slot más cercano ya existente en el grupo (día+nombre) si cae
- * dentro de la tolerancia (±15 min); si no, abre un slot nuevo.
+ * Agrupa clases por (día de semana, nombre, slot horario). El event_id cambia
+ * cada semana en Glofox, así que la identidad de "misma clase recurrente" se
+ * basa en día + nombre + hora aproximada (±15 min de tolerancia). La clase se
+ * asigna al slot ya existente más cercano si cae dentro de tolerancia; si no,
+ * abre un slot nuevo. El slot guarda su hora "habitual" (anchorMinutes de la
+ * primera sesión vista), así que un desplazamiento puntual de una repetición
+ * no mueve la posición visual del grupo entero.
  */
 function groupClasses(classes) {
-  // groups[dayNum][name] = array de { slotMinutes, sumBooked, sumCapacity, count }
   const groups = {}
   DIAS_NUM.forEach(d => { groups[d] = {} })
 
@@ -106,18 +132,16 @@ function groupClasses(classes) {
     const minutesOfDay = h * 60 + m
     const name = c.name || 'Sin nombre'
 
+    if (h < START_HOUR || h >= END_HOUR) return
+
     if (!groups[dayNum][name]) groups[dayNum][name] = []
     const slots = groups[dayNum][name]
 
-    // Busca un slot existente dentro de la tolerancia
     let slot = slots.find(s => Math.abs(s.anchorMinutes - minutesOfDay) <= TOLERANCE_MIN)
 
     if (!slot) {
-      // Redondea al bloque de 15 min más cercano para que el slot quede "limpio"
-      const roundedMinutes = Math.round(minutesOfDay / SLOT_MINUTES) * SLOT_MINUTES
       slot = {
-        anchorMinutes: minutesOfDay,
-        roundedMinutes,
+        anchorMinutes: minutesOfDay, // hora habitual del grupo, fijada por la primera sesión vista
         name,
         dayNum,
         sumBooked: 0,
@@ -136,10 +160,22 @@ function groupClasses(classes) {
 }
 
 export default function OcupacionPromedio({ branchId }) {
-  const [range, setRange] = useState(defaultRange)
+  const [range, setRange] = useState(loadStoredRange)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [groupedSlots, setGroupedSlots] = useState({})
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(range))
+  }, [range])
+
+  // Limpia el rango guardado al salir de esta sección, para que no persista
+  // al navegar a otra parte del dashboard (solo persiste mientras estás aquí)
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem(STORAGE_KEY)
+    }
+  }, [])
 
   useEffect(() => {
     fetchData()
@@ -163,7 +199,7 @@ export default function OcupacionPromedio({ branchId }) {
     const pageSize = 1000
 
     while (true) {
-      let query = supabase
+      const { data, error: queryError } = await supabase
         .from('classes')
         .select('scheduled_at, booked_count, capacity, name, branch_id')
         .eq('branch_id', branchId)
@@ -172,7 +208,6 @@ export default function OcupacionPromedio({ branchId }) {
         .gt('capacity', 0)
         .range(from, from + pageSize - 1)
 
-      const { data, error: queryError } = await query
       if (queryError) {
         setError(queryError.message)
         setLoading(false)
@@ -188,17 +223,20 @@ export default function OcupacionPromedio({ branchId }) {
     setLoading(false)
   }
 
-  // Construye la lista final de slots por día, ordenada por hora, con pct calculado
   const slotsByDay = {}
   DIAS_NUM.forEach(dayNum => {
     const slotsForDay = Object.values(groupedSlots[dayNum] || {}).flat()
-    slotsByDay[dayNum] = slotsForDay
-      .map(s => ({
-        ...s,
-        pct: s.sumCapacity > 0 ? Math.round((s.sumBooked / s.sumCapacity) * 100) : 0,
-      }))
-      .sort((a, b) => a.roundedMinutes - b.roundedMinutes)
+    slotsByDay[dayNum] = slotsForDay.map(s => ({
+      ...s,
+      pct: s.sumCapacity > 0 ? Math.round((s.sumBooked / s.sumCapacity) * 100) : 0,
+      startMin: timeToMinutes(Math.floor(s.anchorMinutes / 60), s.anchorMinutes % 60),
+    }))
   })
+
+  const hourLabels = []
+  for (let h = START_HOUR; h <= END_HOUR; h++) {
+    hourLabels.push(`${String(h).padStart(2, '0')}:00`)
+  }
 
   function formatHour(minutes) {
     const h = Math.floor(minutes / 60)
@@ -211,7 +249,7 @@ export default function OcupacionPromedio({ branchId }) {
       <div>
         <h2 className="text-xl font-bold text-text-100">Ocupación Promedio</h2>
         <p className="text-sm text-text-200 mt-1">
-          Compara la ocupación de clases recurrentes (mismo día, hora aproximada y nombre) entre semanas.
+          Compara la ocupación de clases recurrentes (mismo día, hora habitual y nombre) entre semanas.
         </p>
       </div>
 
@@ -236,51 +274,83 @@ export default function OcupacionPromedio({ branchId }) {
         </div>
       </div>
 
-      {error && (
-        <p className="text-red-600 text-sm">{error}</p>
-      )}
+      {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-200 text-sm">Cargando datos...</div>
       ) : (
-        <div className="rounded-xl border border-bg-300 bg-white overflow-x-auto">
-          <div className="grid min-w-[900px]" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-            {DIAS.map((d, i) => (
-              <div key={d} className="text-center py-2 px-1 border-b border-r border-bg-300 last:border-r-0 bg-bg-200/90">
+        <div className="rounded-xl border border-bg-300 bg-white">
+          <div className="grid border-b border-bg-300 bg-bg-200/90"
+            style={{ gridTemplateColumns: '52px repeat(7, 1fr)' }}>
+            <div className="border-r border-bg-300" />
+            {DIAS.map(d => (
+              <div key={d} className="text-center py-2 px-1 border-r border-bg-300 last:border-r-0">
                 <p className="text-xs font-semibold uppercase tracking-wider text-text-200">{d}</p>
               </div>
             ))}
+          </div>
 
-            {DIAS_NUM.map(dayNum => {
-              const slots = slotsByDay[dayNum] || []
-              return (
-                <div key={dayNum} className="border-r border-bg-300 last:border-r-0 p-2 space-y-2">
-                  {slots.length === 0 && (
-                    <p className="text-xs text-primary-300 text-center py-4">Sin clases</p>
-                  )}
-                  {slots.map((s, i) => {
-                    const colors = getOccupancyColor(s.pct)
-                    return (
+          <div className="overflow-y-auto" style={{ maxHeight: '700px' }}>
+            <div className="grid" style={{ gridTemplateColumns: '52px repeat(7, 1fr)' }}>
+              <div className="border-r border-bg-300 relative" style={{ height: TOTAL_HEIGHT }}>
+                {hourLabels.map((label, i) => (
+                  <div
+                    key={label}
+                    className="absolute right-2 text-xs text-primary-300 -translate-y-2"
+                    style={{ top: i * HOUR_HEIGHT }}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+
+              {DIAS_NUM.map(dayNum => {
+                const slots = slotsByDay[dayNum] || []
+                return (
+                  <div key={dayNum} className="relative border-r border-bg-300 last:border-r-0" style={{ height: TOTAL_HEIGHT }}>
+                    {hourLabels.map((_, i) => (
                       <div
-                        key={`${s.name}_${s.roundedMinutes}_${i}`}
-                        className="rounded-lg px-2 py-1.5"
-                        style={{ background: colors.bg, borderLeft: `3px solid ${colors.border}` }}
-                      >
-                        <p className="text-xs font-semibold truncate" style={{ color: colors.text }}>
-                          {s.name}
-                        </p>
-                        <p className="text-xs opacity-80" style={{ color: colors.text }}>
-                          {formatHour(s.roundedMinutes)}
-                        </p>
-                        <p className="text-xs font-bold" style={{ color: colors.text }}>
-                          {s.pct}% ({s.sumBooked}/{s.sumCapacity})
-                        </p>
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
+                        key={i}
+                        className="absolute left-0 right-0 border-t border-bg-300/80"
+                        style={{ top: i * HOUR_HEIGHT }}
+                      />
+                    ))}
+
+                    {slots.map((s, i) => {
+                      const top = minutesToPx(s.startMin)
+                      const height = HOUR_HEIGHT - 4
+                      const colors = getOccupancyColor(s.pct)
+                      return (
+                        <div
+                          key={`${s.name}_${s.anchorMinutes}_${i}`}
+                          className="absolute rounded overflow-hidden"
+                          style={{
+                            top: top + 2,
+                            height,
+                            left: 2,
+                            right: 2,
+                            background: colors.bg,
+                            borderLeft: `3px solid ${colors.border}`,
+                          }}
+                        >
+                          <div className="px-1.5 py-1 h-full flex flex-col justify-start overflow-hidden">
+                            <p className="text-xs font-semibold leading-tight truncate" style={{ color: colors.text }}>
+                              {s.name}
+                            </p>
+                            <p className="text-xs leading-tight opacity-80 truncate" style={{ color: colors.text }}>
+                              {formatHour(s.anchorMinutes)}
+                            </p>
+                            <p className="text-xs font-bold mt-auto leading-tight" style={{ color: colors.text }}>
+                              {s.pct}% ({s.sumBooked}/{s.sumCapacity}) · {s.count} {s.count === 1 ? 'clase' : 'clases'}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       )}
