@@ -6,6 +6,7 @@ import CentroLayout from './CentroLayout'
 import Home from './Home'
 import HeatmapOcupacion from './components/HeatmapOcupacion'
 import Laserr from './components/Laserr'
+import OcupacionPromedio from './components/OcupacionPromedio'
 import ComingSoon from './ComingSoon'
 import ResetPassword from './ResetPassword'
 import ForgotPassword from './ForgotPassword'
@@ -110,9 +111,10 @@ function AppRoutes() {
         <Route path="home" element={<Home />} />
         <Route path="ocupacion" element={<OcupacionPage />} />
         <Route path="instructores" element={<ComingSoon titulo="Ranking de Instructores" />} />
-        <Route path="miembros" element={<ComingSoon titulo="Métricas de Miembros" />} />
+        <Route path="miembros" element={<ComingSoon titulo="Métricas de Socios" />} />
         <Route path="retencion" element={<ComingSoon titulo="Retención y Churn" />} />
         <Route path="laserr" element={<LaserrPage />} />
+        <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
       </Route>
 
@@ -134,6 +136,15 @@ function OcupacionPage() {
 function LaserrPage() {
   const { branchId } = useParams()
   return <Laserr branchId={branchId} />
+}
+
+function OcupacionPromedioPage() {
+  const { branchId } = useParams()
+  const { isAdmin } = useAuth()
+  const navigate = useNavigate()
+  useEffect(() => { if (!isAdmin) navigate(`/centro/${branchId}/home`) }, [isAdmin, branchId])
+  if (!isAdmin) return null
+  return <OcupacionPromedio branchId={branchId} />
 }
 
 function AdminUsuariosPage() {
