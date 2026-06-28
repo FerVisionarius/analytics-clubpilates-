@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useAuth } from '../AuthContext'
 import { supabase } from '../lib/supabase'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -222,6 +224,7 @@ function layoutEvents(events) {
 }
 
 export default function HeatmapOcupacion({ branchId }) {
+  const { isAdmin } = useAuth()
   const [classesData, setClassesData] = useState([])
   const [allClassNames, setAllClassNames] = useState([])
   const [loading, setLoading] = useState(true)
@@ -491,6 +494,17 @@ export default function HeatmapOcupacion({ branchId }) {
 
   return (
     <div className="space-y-4">
+      {isAdmin && (
+        <Link
+          to={`/centro/${branchId}/ocupacion-promedio`}
+          className="inline-flex items-center gap-1.5 text-sm text-accent-200 hover:text-accent-300 font-medium"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m6 10V11m-9 6h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Ver Ocupación Promedio
+        </Link>
+      )}
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
