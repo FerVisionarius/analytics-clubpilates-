@@ -72,30 +72,22 @@ export default function CentroLayout() {
             <img src={logo} alt="Club Pilates España" className="h-35 w-auto" />
           </Link>
 
-          {isHome ? (
-            <div className="flex items-center gap-2 flex-1 max-w-sm">
-              <span className="text-sm text-text-200 shrink-0 hidden sm:inline">Centro:</span>
-              {visibleBranches.length >= 1 ? (
-                <select
-                  value={branchId}
-                  onChange={e => onBranchChange(e.target.value)}
-                  className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-accent-100"
-                >
-                  {visibleBranches.map(b => (
-                    <option key={b.branch_id} value={b.branch_id}>{b.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <span className="text-sm font-medium text-text-100">{branch?.name}</span>
-              )}
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center min-w-0">
-              <p className="text-sm font-medium text-text-100 truncate">
-                {branch?.name || allBranches.find(b => b.branch_id === branchId)?.name || '—'}
-              </p>
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-1 max-w-sm">
+            <span className="text-sm text-text-200 shrink-0 hidden sm:inline">Centro:</span>
+            {visibleBranches.length >= 1 ? (
+              <select
+                value={branchId}
+                onChange={e => onBranchChange(e.target.value)}
+                className="bg-white border border-primary-200 text-text-100 text-sm rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-accent-100"
+              >
+                {visibleBranches.map(b => (
+                  <option key={b.branch_id} value={b.branch_id}>{b.name}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm font-medium text-text-100">{branch?.name}</span>
+            )}
+          </div>
 
           <div className="flex items-center gap-3 shrink-0">
             {isAdmin && (
