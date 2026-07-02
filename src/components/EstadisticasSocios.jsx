@@ -72,6 +72,7 @@ export default function EstadisticasSocios({ branchId }) {
   const [tipoSuscripcion, setTipoSuscripcion] = useState([])
   const [estadoSocios, setEstadoSocios] = useState([])
   const [tipoSocio, setTipoSocio] = useState([])
+  const [sinSuscripcion, setSinSuscripcion] = useState(0)
 
   useEffect(() => {
     fetchData()
@@ -168,20 +169,17 @@ export default function EstadisticasSocios({ branchId }) {
     }
 
     const ESTADO_ORDEN = ['ACTIVE', 'PAUSED', 'FUTURE', 'LOCKED', 'Sin estado']
-    const estadoFilas = [
-      ...Object.entries(estadoMap)
-        .map(([key, cantidad]) => ({
-          label: ESTADO_LABELS[key] || key,
-          cantidad,
-          tooltip: ESTADO_TOOLTIPS[key] || null,
-        }))
-        .sort((a, b) => {
-          const ia = ESTADO_ORDEN.indexOf(Object.keys(ESTADO_LABELS).find(k => ESTADO_LABELS[k] === a.label) || a.label)
-          const ib = ESTADO_ORDEN.indexOf(Object.keys(ESTADO_LABELS).find(k => ESTADO_LABELS[k] === b.label) || b.label)
-          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
-        }),
-      ...(sinSuscripcion > 0 ? [{ label: 'Sin suscripción', cantidad: sinSuscripcion, tooltip: null }] : []),
-    ]
+    const estadoFilas = Object.entries(estadoMap)
+      .map(([key, cantidad]) => ({
+        label: ESTADO_LABELS[key] || key,
+        cantidad,
+        tooltip: ESTADO_TOOLTIPS[key] || null,
+      }))
+      .sort((a, b) => {
+        const ia = ESTADO_ORDEN.indexOf(Object.keys(ESTADO_LABELS).find(k => ESTADO_LABELS[k] === a.label) || a.label)
+        const ib = ESTADO_ORDEN.indexOf(Object.keys(ESTADO_LABELS).find(k => ESTADO_LABELS[k] === b.label) || b.label)
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+      })
 
     // Tabla 3: Tipo de Socio
     let recurrente = 0
@@ -202,6 +200,7 @@ export default function EstadisticasSocios({ branchId }) {
     setTipoSuscripcion(tipoSuscripcionFilas)
     setEstadoSocios(estadoFilas)
     setTipoSocio(tipoSocioFilas)
+    setSinSuscripcion(sinSuscripcion)
     setLoading(false)
   }
 
@@ -232,6 +231,13 @@ export default function EstadisticasSocios({ branchId }) {
         filas={estadoSocios}
         nota="Se recomienda mantener OVERDUE por debajo del 2%"
       />
+
+{sinSuscripcion > 0 && (
+        <div className="bg-bg-200 border border-bg-300 rounded-2xl px-6 py-4 flex items-center justify-between">
+          <span className="text-sm text-text-200">Socios sin suscripción activa (pago por clase / clases privadas)</span>
+          <span className="text-text-100 font-semibold">{sinSuscripcion.toLocaleString('es-ES')}</span>
+        </div>
+      )}
 
       <TablaEstadistica
         titulo="Tipo de Socio"
