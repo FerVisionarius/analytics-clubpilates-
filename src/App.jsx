@@ -11,6 +11,12 @@ import ComingSoon from './ComingSoon'
 import ResetPassword from './ResetPassword'
 import ForgotPassword from './ForgotPassword'
 import AdminUsuarios from './AdminUsuarios'
+import EstadisticasSocios from './components/EstadisticasSocios'
+
+function SociosPage() {
+  const { branchId } = useParams()
+  return <EstadisticasSocios branchId={branchId} />
+}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -111,7 +117,7 @@ function AppRoutes() {
         <Route path="home" element={<Home />} />
         <Route path="ocupacion" element={<OcupacionPage />} />
         <Route path="instructores" element={<ComingSoon titulo="Ranking de Instructores" />} />
-        <Route path="miembros" element={<ComingSoon titulo="Métricas de Socios" />} />
+        <Route path="miembros" element={<SociosPage />} />
         <Route path="retencion" element={<ComingSoon titulo="Retención y Churn" />} />
         <Route path="laserr" element={<LaserrPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
