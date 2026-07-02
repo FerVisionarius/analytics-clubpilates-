@@ -72,11 +72,12 @@ export default function EstadisticasSocios({ branchId }) {
     const pageSize = 1000
 
     while (true) {
-      const { data, error: queryError } = await supabase
+    const { data, error: queryError } = await supabase
         .from('members')
         .select('membership_type, membership_status, plan_name, auto_renewal')
         .eq('branch_id', branchId)
         .eq('status', 'MEMBER')
+        .in('membership_type', ['time_classes', 'time'])
         .range(from, from + pageSize - 1)
 
       if (queryError) {
