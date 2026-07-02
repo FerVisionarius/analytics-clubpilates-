@@ -31,7 +31,21 @@ function TablaEstadistica({ titulo, filas, columnas, nota }) {
         <tbody>
           {filas.map((f, i) => (
             <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
-              <td className="px-6 py-3 text-text-100">{f.label}</td>
+              <td className="px-6 py-3 text-text-100">
+                <div className="flex items-center gap-2">
+                  <span>{f.label}</span>
+                  {f.tooltip && (
+                    <div className="relative group">
+                      <svg className="w-4 h-4 text-primary-300 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute left-6 top-0 z-10 hidden group-hover:block bg-text-100 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-xl">
+                        {f.tooltip}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </td>
               <td className="px-6 py-3 text-text-100 font-medium">{f.cantidad.toLocaleString('es-ES')}</td>
               <td className="px-6 py-3 text-text-200">{total > 0 ? ((f.cantidad / total) * 100).toFixed(2) + '%' : '—'}</td>
               {f.extra !== undefined && (
@@ -123,14 +137,51 @@ export default function EstadisticasSocios({ branchId }) {
       estadoMap[estado] = (estadoMap[estado] || 0) + 1
     })
 
+    // Contar socios sin suscripción (payg + num_classes) por separado
+    let sinSuscripcion = 0
+    let fromSin = 0
+    while (true) {
+      const { data: sinData } = await supabase
+        .from('members')
+        .select('glofox_member_id')
+        .eq('branch_id', branchId)
+        .eq('status', 'MEMBER')
+        .in('membership_type', ['payg', 'num_classes'])
+        .range(fromSin, fromSin + 999)
+      if (!sinData || sinData.length === 0) break
+      sinSuscripcion += sinData.length
+      if (sinData.length < 1000) break
+      fromSin += 1000
+    }
+
+    const ESTADO_LABELS = {
+      'ACTIVE': 'Activos',
+      'PAUSED': 'Pausados',
+      'FUTURE': 'Futuros',
+      'LOCKED': 'Atrasados',
+      'Sin estado': 'Sin estado',
+    }
+
+    const ESTADO_TOOLTIPS = {
+      'ACTIVE': 'Miembros con una suscripción de 4 clases, 8 clases o ilimitadas',
+      'PAUSED': 'Miembros con la suscripción pausada',
+    }
+
     const ESTADO_ORDEN = ['ACTIVE', 'PAUSED', 'FUTURE', 'LOCKED', 'Sin estado']
-    const estadoFilas = Object.entries(estadoMap)
-      .map(([label, cantidad]) => ({ label, cantidad }))
-      .sort((a, b) => {
-        const ia = ESTADO_ORDEN.indexOf(a.label)
-        const ib = ESTADO_ORDEN.indexOf(b.label)
-        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
-      })
+    const estadoFilas = [
+      ...Object.entries(estadoMap)
+        .map(([key, cantidad]) => ({
+          label: ESTADO_LABELS[key] || key,
+          cantidad,
+          tooltip: ESTADO_TOOLTIPS[key] || null,
+        }))
+        .sort((a, b) => {
+          const ia = ESTADO_ORDEN.indexOf(Object.keys(ESTADO_LABELS).find(k => ESTADO_LABELS[k] === a.label) || a.label)
+          const ib = ESTADO_ORDEN.indexOf(Object.keys(ESTADO_LABELS).find(k => ESTADO_LABELS[k] === b.label) || b.label)
+          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+        }),
+      ...(sinSuscripcion > 0 ? [{ label: 'Sin suscripción', cantidad: sinSuscripcion, tooltip: null }] : []),
+    ]
 
     // Tabla 3: Tipo de Socio
     let recurrente = 0
