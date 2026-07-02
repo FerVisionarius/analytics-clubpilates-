@@ -186,11 +186,12 @@ export default function EstadisticasSocios({ branchId }) {
     let noRecurrente = 0
     let sinDato = 0
     allMembers.forEach(m => {
-      if (m.auto_renewal === true) recurrente++
-      else if (m.auto_renewal === false) noRecurrente++
+      const p = m.plan_name?.toLowerCase() || ''
+      if (p.includes('cobro recurrente')) recurrente++
+      else if (p.includes('no recurrente')) noRecurrente++
       else sinDato++
     })
-
+    
     const tipoSocioFilas = [
       { label: 'Recurrente', cantidad: recurrente },
       { label: 'No recurrente', cantidad: noRecurrente },
