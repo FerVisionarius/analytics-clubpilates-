@@ -48,12 +48,24 @@ export default function Laserr({ branchId }) {
       .gte('created_at', fromISO)
       .lte('created_at', toISO)
 
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select('glofox_booking_id, user_id, attended, time_start')
-      .eq('branch_id', branchId)
-      .gte('time_start', fromISO)
-      .lte('time_start', toISO)
+    // Primero obtenemos los event_ids de clases que SÍ existen en el periodo
+const { data: activeClasses } = await supabase
+.from('classes')
+.select('event_id')
+.eq('branch_id', branchId)
+.gte('scheduled_at', fromISO)
+.lte('scheduled_at', toISO)
+.ilike('name', '%introducci%')
+
+const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
+
+const { data: bookings } = await supabase
+.from('bookings')
+.select('glofox_booking_id, user_id, attended, time_start, event_id')
+.eq('branch_id', branchId)
+.gte('time_start', fromISO)
+.lte('time_start', toISO)
+.in('event_id', activeEventIds.length > 0 ? activeEventIds : ['none'])
 
     if (!leads || !bookings) {
       setLoading(false)
