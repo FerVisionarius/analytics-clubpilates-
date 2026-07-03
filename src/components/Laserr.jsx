@@ -48,24 +48,34 @@ export default function Laserr({ branchId }) {
       .gte('created_at', fromISO)
       .lte('created_at', toISO)
 
-    // Primero obtenemos los event_ids de clases que SÍ existen en el periodo
-const { data: activeClasses } = await supabase
-.from('classes')
-.select('event_id')
-.eq('branch_id', branchId)
-.gte('scheduled_at', fromISO)
-.lte('scheduled_at', toISO)
-.ilike('name', '%introducci%')
+    // event_ids de clases de intro que existen actualmente en el periodo
+    const { data: activeClasses } = await supabase
+      .from('classes')
+      .select('event_id')
+      .eq('branch_id', branchId)
+      .gte('scheduled_at', fromISO)
+      .lte('scheduled_at', toISO)
+      .ilike('name', '%introducci%')
 
-const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
+    const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
 
-const { data: bookings } = await supabase
-.from('bookings')
-.select('glofox_booking_id, user_id, attended, time_start, event_id')
-.eq('branch_id', branchId)
-.gte('time_start', fromISO)
-.lte('time_start', toISO)
-.in('event_id', activeEventIds.length > 0 ? activeEventIds : ['none'])
+    const { data: bookings } = await supabase
+      .from('bookings')
+      .select('glofox_booking_id, user_id, attended, time_start, event_id, status')
+      .eq('branch_id', branchId)
+      .gte('time_start', fromISO)
+      .lte('time_start', toISO)
+      .neq('status', 'CANCELED')
+      .in('event_id', activeEventIds.length > 0 ? activeEventIds : ['none'])
+
+    const { data: canceledBookings } = await supabase
+      .from('bookings')
+      .select('user_id, event_id')
+      .eq('branch_id', branchId)
+      .gte('time_start', fromISO)
+      .lte('time_start', toISO)
+      .eq('status', 'CANCELED')
+      .in('event_id', activeEventIds.length > 0 ? activeEventIds : ['none'])
 
     if (!leads || !bookings) {
       setLoading(false)
@@ -110,6 +120,7 @@ const { data: bookings } = await supabase
     }
 
     const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
+    const canceladosIds = [...new Set((canceledBookings || []).map(b => b.user_id))]
 
     let compraronEnMomentoList = []
     let compraronDespuesList = []
@@ -147,6 +158,8 @@ const { data: bookings } = await supabase
       leadsList: leads,
       apuntados: apuntadosIds.length,
       apuntadosList: apuntadosIds.map(id => leadsMap[id]).filter(Boolean),
+      cancelados: canceladosIds.length,
+      canceladosList: canceladosIds.map(id => leadsMap[id]).filter(Boolean),
       asistidos: asistidosIds.length,
       asistidosList: asistidosIds.map(id => leadsMap[id] || membersMap[id]).filter(Boolean),
       compraronEnMomento: compraronEnMomentoList.length,
@@ -170,6 +183,7 @@ const { data: bookings } = await supabase
   const steps = stats ? [
     { label: 'Leads totales', value: stats.leads, pct: null, color: 'bg-accent-100', desc: 'Nuevos leads en el período', list: stats.leadsList },
     { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), color: 'bg-accent-200', desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
+    { label: 'Cancelados', value: stats.cancelados, pct: pct(stats.cancelados, stats.apuntados), color: 'bg-red-400', desc: 'Cancelaron la reserva de intro', list: stats.canceladosList },
     { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), color: 'bg-primary-200', desc: 'Asistieron a la clase', list: stats.asistidosList },
     { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), color: 'bg-green-500', desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList },
     { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), color: 'bg-emerald-400', desc: 'Membresía en días posteriores', list: stats.compraronDespuesList },
@@ -285,7 +299,6 @@ const { data: bookings } = await supabase
         </div>
       )}
 
-      {/* Modal */}
       {modal && (
         <div
           className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
