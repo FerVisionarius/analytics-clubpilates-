@@ -28,7 +28,7 @@ export default function Laserr({ branchId }) {
   const [dateTo, setDateTo] = useState(todayStr)
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState(null)
-  const [modal, setModal] = useState(null) // { title, people }
+  const [modal, setModal] = useState(null)
 
   useEffect(() => {
     if (branchId) fetchData()
@@ -48,7 +48,6 @@ export default function Laserr({ branchId }) {
       .gte('created_at', fromISO)
       .lte('created_at', toISO)
 
-    // event_ids de clases de intro que existen actualmente en el periodo
     const { data: activeClasses } = await supabase
       .from('classes')
       .select('event_id')
@@ -88,21 +87,43 @@ export default function Laserr({ branchId }) {
 
     const asistidosBookings = bookings.filter(b => b.attended === true)
     const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
+    const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
+    const canceladosIds = [...new Set((canceledBookings || []).map(b => b.user_id))]
 
-    let membersMap = {}
-    if (asistidosIds.length > 0) {
-      const { data: bookingMembers } = await supabase
+    // Traer datos de TODOS los usuarios involucrados (apuntados, cancelados, asistidos),
+    // no solo de los leads creados en el rango
+    const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds])]
+    const peopleMap = {}
+    if (allUserIds.length > 0) {
+      const { data: allPeople } = await supabase
         .from('members')
         .select('glofox_member_id, name, email, created_at, status, membership_type, membership_start_date')
-        .in('glofox_member_id', asistidosIds)
         .eq('branch_id', branchId)
-        .neq('membership_type', 'payg')
-        .lte('membership_start_date', toISO)
+        .in('glofox_member_id', allUserIds)
 
-      if (bookingMembers) {
-        bookingMembers.forEach(m => { membersMap[m.glofox_member_id] = m })
+      if (allPeople) {
+        allPeople.forEach(p => { peopleMap[p.glofox_member_id] = p })
       }
     }
+
+    const buildPerson = (id) => {
+      const p = peopleMap[id] || leadsMap[id]
+      return {
+        name: p?.name || '—',
+        email: p?.email || '—',
+        created_at: p?.created_at,
+        membership_type: p?.membership_type,
+        membership_start_date: p?.membership_start_date,
+      }
+    }
+
+    let membersMap = {}
+    asistidosIds.forEach(id => {
+      const p = peopleMap[id]
+      if (p && p.membership_type !== 'payg' && p.membership_start_date && p.membership_start_date <= toISO) {
+        membersMap[id] = p
+      }
+    })
 
     let sinIntroList = []
     if (leadIds.length > 0) {
@@ -119,24 +140,14 @@ export default function Laserr({ branchId }) {
       sinIntroList = miembrosSinIntro ?? []
     }
 
-    const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
-    const canceladosIds = [...new Set((canceledBookings || []).map(b => b.user_id))]
-
     let compraronEnMomentoList = []
     let compraronDespuesList = []
     let noCompraronList = []
 
     asistidosIds.forEach(userId => {
       const member = membersMap[userId]
-      const lead = leadsMap[userId]
       const booking = asistidosBookings.find(b => b.user_id === userId)
-      const person = {
-        name: member?.name || lead?.name || '—',
-        email: member?.email || lead?.email || '—',
-        created_at: lead?.created_at || member?.created_at,
-        membership_type: member?.membership_type,
-        membership_start_date: member?.membership_start_date,
-      }
+      const person = buildPerson(userId)
 
       if (!member || member.status !== 'MEMBER') {
         noCompraronList.push(person)
@@ -157,11 +168,11 @@ export default function Laserr({ branchId }) {
       leads: leads.length,
       leadsList: leads,
       apuntados: apuntadosIds.length,
-      apuntadosList: apuntadosIds.map(id => leadsMap[id]).filter(Boolean),
+      apuntadosList: apuntadosIds.map(buildPerson),
       cancelados: canceladosIds.length,
-      canceladosList: canceladosIds.map(id => leadsMap[id]).filter(Boolean),
+      canceladosList: canceladosIds.map(buildPerson),
       asistidos: asistidosIds.length,
-      asistidosList: asistidosIds.map(id => leadsMap[id] || membersMap[id]).filter(Boolean),
+      asistidosList: asistidosIds.map(buildPerson),
       compraronEnMomento: compraronEnMomentoList.length,
       compraronEnMomentoList,
       compraronDespues: compraronDespuesList.length,
