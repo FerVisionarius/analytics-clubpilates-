@@ -126,18 +126,40 @@ export default function Laserr({ branchId }) {
     })
 
     let sinIntroList = []
-    if (leadIds.length > 0) {
-      const { data: miembrosSinIntro } = await supabase
-        .from('members')
-        .select('glofox_member_id, name, email, created_at, membership_type, membership_start_date')
-        .eq('branch_id', branchId)
-        .eq('status', 'MEMBER')
-        .neq('membership_type', 'payg')
-        .or(`membership_start_date.lte.${toISO},membership_start_date.is.null`)
-        .in('glofox_member_id', leadIds)
-        .not('glofox_member_id', 'in', `(${asistidosIds.length > 0 ? asistidosIds.join(',') : 'null'})`)
 
-      sinIntroList = miembrosSinIntro ?? []
+    const { data: nuevasMembresias } = await supabase
+      .from('new_memberships_log')
+      .select('user_id, contract_start, member_state, plan_name')
+      .eq('branch_id', branchId)
+      .gte('contract_start', fromISO)
+      .lte('contract_start', toISO)
+
+    if (nuevasMembresias) {
+      const sinIntroRows = nuevasMembresias.filter(m => !asistidosIds.includes(m.user_id))
+
+      const sinIntroUserIds = sinIntroRows.map(m => m.user_id)
+      const missingIds = sinIntroUserIds.filter(id => !peopleMap[id])
+
+      if (missingIds.length > 0) {
+        const { data: extraPeople } = await supabase
+          .from('members')
+          .select('glofox_member_id, name, email')
+          .eq('branch_id', branchId)
+          .in('glofox_member_id', missingIds)
+
+        if (extraPeople) extraPeople.forEach(p => { peopleMap[p.glofox_member_id] = p })
+      }
+
+      sinIntroList = sinIntroRows.map(m => {
+        const p = peopleMap[m.user_id]
+        return {
+          name: p?.name || '—',
+          email: p?.email || '—',
+          created_at: m.contract_start,
+          membership_type: m.plan_name,
+          membership_start_date: m.contract_start,
+        }
+      })
     }
 
     let compraronEnMomentoList = []
