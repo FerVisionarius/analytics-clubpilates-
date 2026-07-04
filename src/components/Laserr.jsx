@@ -90,8 +90,6 @@ export default function Laserr({ branchId }) {
     const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
     const canceladosIds = [...new Set((canceledBookings || []).map(b => b.user_id))]
 
-    // Traer datos de TODOS los usuarios involucrados (apuntados, cancelados, asistidos),
-    // no solo de los leads creados en el rango
     const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds])]
     const peopleMap = {}
     if (allUserIds.length > 0) {
@@ -116,14 +114,6 @@ export default function Laserr({ branchId }) {
         membership_start_date: p?.membership_start_date,
       }
     }
-
-    let membersMap = {}
-    asistidosIds.forEach(id => {
-      const p = peopleMap[id]
-      if (p && p.membership_type !== 'payg' && p.membership_start_date && p.membership_start_date <= toISO) {
-        membersMap[id] = p
-      }
-    })
 
     let sinIntroList = []
 
@@ -162,22 +152,37 @@ export default function Laserr({ branchId }) {
       })
     }
 
+    const primeraMembresiaMap = {}
+    if (asistidosIds.length > 0) {
+      const { data: membresiasAsistidos } = await supabase
+        .from('new_memberships_log')
+        .select('user_id, contract_start')
+        .in('user_id', asistidosIds)
+        .order('contract_start', { ascending: true })
+
+      if (membresiasAsistidos) {
+        membresiasAsistidos.forEach(m => {
+          if (!primeraMembresiaMap[m.user_id]) primeraMembresiaMap[m.user_id] = m
+        })
+      }
+    }
+
     let compraronEnMomentoList = []
     let compraronDespuesList = []
     let noCompraronList = []
 
     asistidosIds.forEach(userId => {
-      const member = membersMap[userId]
+      const membresia = primeraMembresiaMap[userId]
       const booking = asistidosBookings.find(b => b.user_id === userId)
       const person = buildPerson(userId)
 
-      if (!member || member.status !== 'MEMBER') {
+      if (!membresia) {
         noCompraronList.push(person)
         return
       }
 
       const claseDate = booking ? toMadridDate(booking.time_start) : null
-      const compraDate = member.membership_start_date ? toMadridDate(member.membership_start_date) : null
+      const compraDate = membresia.contract_start ? toMadridDate(membresia.contract_start) : null
 
       if (claseDate && compraDate && claseDate === compraDate) {
         compraronEnMomentoList.push(person)
