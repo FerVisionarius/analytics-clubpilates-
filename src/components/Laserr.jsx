@@ -58,25 +58,15 @@ export default function Laserr({ branchId }) {
 
     const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
 
-    const { data: bookings } = await supabase
+    const { data: allBookings } = await supabase
       .from('bookings')
       .select('glofox_booking_id, user_id, attended, time_start, event_id, status')
       .eq('branch_id', branchId)
       .gte('time_start', fromISO)
       .lte('time_start', toISO)
-      .neq('status', 'CANCELED')
       .in('event_id', activeEventIds.length > 0 ? activeEventIds : ['none'])
 
-    const { data: canceledBookings } = await supabase
-      .from('bookings')
-      .select('user_id, event_id')
-      .eq('branch_id', branchId)
-      .gte('time_start', fromISO)
-      .lte('time_start', toISO)
-      .eq('status', 'CANCELED')
-      .in('event_id', activeEventIds.length > 0 ? activeEventIds : ['none'])
-
-    if (!leads || !bookings) {
+    if (!leads || !allBookings) {
       setLoading(false)
       return
     }
@@ -85,12 +75,19 @@ export default function Laserr({ branchId }) {
     const leadsMap = {}
     leads.forEach(l => { leadsMap[l.glofox_member_id] = l })
 
-    const asistidosBookings = bookings.filter(b => b.attended === true)
-    const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
-    const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
-    const canceladosIds = [...new Set((canceledBookings || []).map(b => b.user_id))]
+    const apuntadosIds = [...new Set(allBookings.map(b => b.user_id))]
 
-    const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds])]
+    const canceladosBookings = allBookings.filter(b => b.status === 'CANCELED')
+    const canceladosIds = [...new Set(canceladosBookings.map(b => b.user_id))]
+
+    const asistidosBookings = allBookings.filter(b => b.status !== 'CANCELED' && b.attended === true)
+    const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
+
+    const noAsistieronIds = apuntadosIds.filter(
+      id => !canceladosIds.includes(id) && !asistidosIds.includes(id)
+    )
+
+    const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds, ...noAsistieronIds])]
     const peopleMap = {}
     if (allUserIds.length > 0) {
       const { data: allPeople } = await supabase
@@ -200,6 +197,8 @@ export default function Laserr({ branchId }) {
       canceladosList: canceladosIds.map(buildPerson),
       asistidos: asistidosIds.length,
       asistidosList: asistidosIds.map(buildPerson),
+      noAsistieron: noAsistieronIds.length,
+      noAsistieronList: noAsistieronIds.map(buildPerson),
       compraronEnMomento: compraronEnMomentoList.length,
       compraronEnMomentoList,
       compraronDespues: compraronDespuesList.length,
@@ -223,6 +222,7 @@ export default function Laserr({ branchId }) {
     { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), color: 'bg-accent-200', desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
     { label: 'Cancelados', value: stats.cancelados, pct: pct(stats.cancelados, stats.apuntados), color: 'bg-red-400', desc: 'Cancelaron la reserva de intro', list: stats.canceladosList },
     { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), color: 'bg-primary-200', desc: 'Asistieron a la clase', list: stats.asistidosList },
+    { label: 'No asistieron', value: stats.noAsistieron, pct: pct(stats.noAsistieron, stats.apuntados), color: 'bg-orange-400', desc: 'No asistieron ni cancelaron', list: stats.noAsistieronList },
     { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), color: 'bg-green-500', desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList },
     { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), color: 'bg-emerald-400', desc: 'Membresía en días posteriores', list: stats.compraronDespuesList },
     { label: 'No compraron', value: stats.noCompraron, pct: pct(stats.noCompraron, stats.asistidos), color: 'bg-red-500', desc: 'Asistieron pero no compraron membresía', list: stats.noCompraronList },
