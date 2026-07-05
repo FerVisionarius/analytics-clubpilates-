@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const today = new Date()
 const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
@@ -238,51 +239,48 @@ export default function Laserr({ branchId }) {
     const { data: { user } } = await supabase.auth.getUser()
     const email = user?.email
     if (!email || !stats) return
-
+  
     const doc = new jsPDF()
-    let y = 20
-
-    doc.setFontSize(16)
-    doc.text('Laserr - Funnel de conversión', 14, y)
-    y += 8
+  
+    doc.setFontSize(18)
+    doc.setTextColor(30, 30, 30)
+    doc.text('Laserr - Funnel de conversión', 14, 20)
+  
     doc.setFontSize(10)
-    doc.text(`Período: ${dateFrom} a ${dateTo}`, 14, y)
-    y += 12
-
-    doc.setFillColor(240, 240, 240)
-    doc.rect(14, y, 182, 8, 'F')
-    doc.setFontSize(10)
-    doc.setFont(undefined, 'bold')
-    doc.text('Paso', 16, y + 6)
-    doc.text('Valor', 130, y + 6)
-    doc.text('% paso anterior', 160, y + 6)
-    doc.setFont(undefined, 'normal')
-    y += 8
-
-    steps.forEach((step, i) => {
-      if (i % 2 === 0) {
-        doc.setFillColor(250, 250, 250)
-        doc.rect(14, y, 182, 8, 'F')
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Período: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, 14, 27)
+  
+    autoTable(doc, {
+      startY: 34,
+      head: [['Paso', 'Descripción', 'Valor', '% paso anterior']],
+      body: steps.map(step => [step.label, step.desc, String(step.value), step.pct || '—']),
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 249, 250] },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        2: { halign: 'center', fontStyle: 'bold' },
+        3: { halign: 'center' }
       }
-      doc.text(step.label, 16, y + 6)
-      doc.text(String(step.value), 130, y + 6)
-      doc.text(step.pct || '—', 160, y + 6)
-      y += 8
     })
-
-    y += 8
+  
+    const finalY = doc.lastAutoTable.finalY + 10
+  
     doc.setFillColor(230, 240, 255)
-    doc.rect(14, y, 182, 28, 'F')
-    y += 8
+    doc.roundedRect(14, finalY, 182, 32, 3, 3, 'F')
+  
+    doc.setFontSize(11)
+    doc.setTextColor(30, 30, 30)
     doc.setFont(undefined, 'bold')
-    doc.text(`Leads → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}`, 16, y)
-    y += 7
-    doc.text(`Asistidos → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}`, 16, y)
-    y += 7
-    doc.text(`Total conversiones: ${stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}`, 16, y)
-
+    doc.text('Resumen de conversión', 20, finalY + 9)
+  
+    doc.setFont(undefined, 'normal')
+    doc.setFontSize(10)
+    doc.text(`Leads a membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}`, 20, finalY + 17)
+    doc.text(`Asistidos a membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}`, 20, finalY + 24)
+    doc.text(`Total conversiones: ${stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}`, 20, finalY + 31)
+  
     const pdfBase64 = doc.output('datauristring').split(',')[1]
-
+  
     setExporting(true)
     try {
       await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
