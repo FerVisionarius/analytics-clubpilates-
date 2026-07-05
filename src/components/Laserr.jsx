@@ -30,6 +30,8 @@ export default function Laserr({ branchId }) {
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState(null)
   const [modal, setModal] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportMsg, setExportMsg] = useState(null)
 
   useEffect(() => {
     if (branchId) fetchData()
@@ -240,18 +242,6 @@ export default function Laserr({ branchId }) {
     const doc = new jsPDF()
     let y = 20
 
-
-    try {
-      const res = await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, pdfBase64, dateFrom, dateTo, branchId })
-      })
-      console.log('status:', res.status)
-    } catch (err) {
-      console.error('error exportando PDF:', err)
-    }
-
     doc.setFontSize(16)
     doc.text('Laserr - Funnel de conversión', 14, y)
     y += 8
@@ -259,33 +249,53 @@ export default function Laserr({ branchId }) {
     doc.text(`Período: ${dateFrom} a ${dateTo}`, 14, y)
     y += 12
 
-    doc.setFontSize(12)
-    steps.forEach(step => {
-      doc.text(`${step.label}: ${step.value}${step.pct ? ' (' + step.pct + ')' : ''}`, 14, y)
+    doc.setFillColor(240, 240, 240)
+    doc.rect(14, y, 182, 8, 'F')
+    doc.setFontSize(10)
+    doc.setFont(undefined, 'bold')
+    doc.text('Paso', 16, y + 6)
+    doc.text('Valor', 130, y + 6)
+    doc.text('% paso anterior', 160, y + 6)
+    doc.setFont(undefined, 'normal')
+    y += 8
+
+    steps.forEach((step, i) => {
+      if (i % 2 === 0) {
+        doc.setFillColor(250, 250, 250)
+        doc.rect(14, y, 182, 8, 'F')
+      }
+      doc.text(step.label, 16, y + 6)
+      doc.text(String(step.value), 130, y + 6)
+      doc.text(step.pct || '—', 160, y + 6)
       y += 8
     })
 
-    y += 4
-    doc.setFontSize(11)
-    doc.text(`Leads → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}`, 14, y)
+    y += 8
+    doc.setFillColor(230, 240, 255)
+    doc.rect(14, y, 182, 28, 'F')
+    y += 8
+    doc.setFont(undefined, 'bold')
+    doc.text(`Leads → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}`, 16, y)
     y += 7
-    doc.text(`Asistidos → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}`, 14, y)
+    doc.text(`Asistidos → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}`, 16, y)
     y += 7
-    doc.text(`Total conversiones: ${stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}`, 14, y)
+    doc.text(`Total conversiones: ${stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}`, 16, y)
 
     const pdfBase64 = doc.output('datauristring').split(',')[1]
 
-    await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        pdfBase64,
-        dateFrom,
-        dateTo,
-        branchId
+    setExporting(true)
+    try {
+      await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, pdfBase64, dateFrom, dateTo, branchId })
       })
-    })
+      setExportMsg('Informe enviado')
+    } catch (err) {
+      setExportMsg('Error al enviar')
+    }
+    setExporting(false)
+    setTimeout(() => setExportMsg(null), 3000)
   }
 
   return (
@@ -325,11 +335,14 @@ export default function Laserr({ branchId }) {
         </button>
         <button
           onClick={exportarPDF}
-          disabled={!stats}
-          className="bg-primary-200 hover:bg-primary-300 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+          disabled={!stats || exporting}
+          className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
         >
-          Exportar PDF
+          {exporting ? 'Enviando...' : 'Exportar PDF'}
         </button>
+        {exportMsg && (
+          <span className="text-sm text-green-600 font-medium">{exportMsg}</span>
+        )}
       </div>
 
       {loading && (
