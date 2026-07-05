@@ -90,8 +90,6 @@ export default function Laserr({ branchId }) {
     const apuntadosIds = [...new Set(bookings.map(b => b.user_id))]
     const canceladosIds = [...new Set((canceledBookings || []).map(b => b.user_id))]
 
-    // Traer datos de TODOS los usuarios involucrados (apuntados, cancelados, asistidos),
-    // no solo de los leads creados en el rango
     const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds])]
     const peopleMap = {}
     if (allUserIds.length > 0) {
@@ -117,22 +115,14 @@ export default function Laserr({ branchId }) {
       }
     }
 
-    let membersMap = {}
-    asistidosIds.forEach(id => {
-      const p = peopleMap[id]
-      if (p && p.membership_type !== 'payg' && p.membership_start_date && p.membership_start_date <= toISO) {
-        membersMap[id] = p
-      }
-    })
-
     let sinIntroList = []
 
     const { data: nuevasMembresias } = await supabase
-    .from('new_memberships_log')
-    .select('user_id, contract_start, event_created, member_state, plan_name')
-    .eq('branch_id', branchId)
-    .gte('contract_start', fromISO)
-    .lte('contract_start', toISO)
+      .from('new_memberships_log')
+      .select('user_id, contract_start, event_created, member_state, plan_name')
+      .eq('branch_id', branchId)
+      .gte('contract_start', fromISO)
+      .lte('contract_start', toISO)
 
     if (nuevasMembresias) {
       const sinIntroRows = nuevasMembresias.filter(m => !asistidosIds.includes(m.user_id))
@@ -155,11 +145,26 @@ export default function Laserr({ branchId }) {
         return {
           name: p?.name || '—',
           email: p?.email || '—',
-          created_at: m.event_created,
+          created_at: m.contract_start,
           membership_type: m.plan_name,
-          membership_start_date: m.contract_start,
+          membership_start_date: m.event_created,
         }
       })
+    }
+
+    const primeraMembresiaMap = {}
+    if (asistidosIds.length > 0) {
+      const { data: membresiasAsistidos } = await supabase
+        .from('new_memberships_log')
+        .select('user_id, contract_start')
+        .in('user_id', asistidosIds)
+        .order('contract_start', { ascending: true })
+
+      if (membresiasAsistidos) {
+        membresiasAsistidos.forEach(m => {
+          if (!primeraMembresiaMap[m.user_id]) primeraMembresiaMap[m.user_id] = m
+        })
+      }
     }
 
     let compraronEnMomentoList = []
@@ -167,17 +172,17 @@ export default function Laserr({ branchId }) {
     let noCompraronList = []
 
     asistidosIds.forEach(userId => {
-      const member = membersMap[userId]
+      const membresia = primeraMembresiaMap[userId]
       const booking = asistidosBookings.find(b => b.user_id === userId)
       const person = buildPerson(userId)
 
-      if (!member || member.status !== 'MEMBER') {
+      if (!membresia) {
         noCompraronList.push(person)
         return
       }
 
       const claseDate = booking ? toMadridDate(booking.time_start) : null
-      const compraDate = member.membership_start_date ? toMadridDate(member.membership_start_date) : null
+      const compraDate = membresia.contract_start ? toMadridDate(membresia.contract_start) : null
 
       if (claseDate && compraDate && claseDate === compraDate) {
         compraronEnMomentoList.push(person)
