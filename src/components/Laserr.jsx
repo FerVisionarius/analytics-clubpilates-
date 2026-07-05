@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import jsPDF from 'jspdf'
 
 const today = new Date()
 const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
@@ -231,6 +232,50 @@ export default function Laserr({ branchId }) {
 
   const maxVal = stats ? Math.max(stats.leads, 1) : 1
 
+  async function exportarPDF() {
+    const { data: { user } } = await supabase.auth.getUser()
+    const email = user?.email
+    if (!email || !stats) return
+
+    const doc = new jsPDF()
+    let y = 20
+
+    doc.setFontSize(16)
+    doc.text('Laserr - Funnel de conversión', 14, y)
+    y += 8
+    doc.setFontSize(10)
+    doc.text(`Período: ${dateFrom} a ${dateTo}`, 14, y)
+    y += 12
+
+    doc.setFontSize(12)
+    steps.forEach(step => {
+      doc.text(`${step.label}: ${step.value}${step.pct ? ' (' + step.pct + ')' : ''}`, 14, y)
+      y += 8
+    })
+
+    y += 4
+    doc.setFontSize(11)
+    doc.text(`Leads → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}`, 14, y)
+    y += 7
+    doc.text(`Asistidos → membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}`, 14, y)
+    y += 7
+    doc.text(`Total conversiones: ${stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}`, 14, y)
+
+    const pdfBase64 = doc.output('datauristring').split(',')[1]
+
+    await fetch('https://n8n-clubpilates.serversvisionarius.com/webhook/export-laserr-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        pdfBase64,
+        dateFrom,
+        dateTo,
+        branchId
+      })
+    })
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -265,6 +310,13 @@ export default function Laserr({ branchId }) {
           className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
         >
           {loading ? 'Cargando...' : 'Aplicar'}
+        </button>
+        <button
+          onClick={exportarPDF}
+          disabled={!stats}
+          className="bg-primary-200 hover:bg-primary-300 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+        >
+          Exportar PDF
         </button>
       </div>
 
