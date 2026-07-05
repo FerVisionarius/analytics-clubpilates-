@@ -240,6 +240,18 @@ export default function Laserr({ branchId }) {
     const doc = new jsPDF()
     let y = 20
 
+
+    try {
+      const res = await fetch('https://n8n-clubpilates.serversvisionarius.com/webhook/export-laserr-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, pdfBase64, dateFrom, dateTo, branchId })
+      })
+      console.log('status:', res.status)
+    } catch (err) {
+      console.error('error exportando PDF:', err)
+    }
+
     doc.setFontSize(16)
     doc.text('Laserr - Funnel de conversión', 14, y)
     y += 8
