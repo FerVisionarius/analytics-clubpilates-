@@ -242,7 +242,7 @@ export default function Laserr({ branchId }) {
 
 
     try {
-      const res = await fetch('https://n8n-clubpilates.serversvisionarius.com/webhook/export-laserr-pdf', {
+      const res = await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, pdfBase64, dateFrom, dateTo, branchId })
@@ -275,7 +275,7 @@ export default function Laserr({ branchId }) {
 
     const pdfBase64 = doc.output('datauristring').split(',')[1]
 
-    await fetch('https://n8n-clubpilates.serversvisionarius.com/webhook/export-laserr-pdf', {
+    await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
