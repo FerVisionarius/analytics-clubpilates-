@@ -241,22 +241,23 @@ export default function Laserr({ branchId }) {
     if (!email || !stats) return
   
     const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
   
     doc.setFontSize(18)
     doc.setTextColor(30, 30, 30)
-    doc.text('Laserr - Funnel de conversión', 14, 20)
+    doc.text('Laserr - Funnel de conversión', pageWidth / 2, 30, { align: 'center' })
   
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
-    doc.text(`Período: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, 14, 27)
+    doc.text(`Período: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, pageWidth / 2, 38, { align: 'center' })
   
     autoTable(doc, {
-      startY: 34,
+      startY: 48,
       head: [['Paso', 'Descripción', 'Valor', '% paso anterior']],
       body: steps.map(step => [step.label, step.desc, String(step.value), step.pct || '—']),
       headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [248, 249, 250] },
-      styles: { fontSize: 9, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [225, 232, 240] },
+      styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
         2: { halign: 'center', fontStyle: 'bold' },
         3: { halign: 'center' }
@@ -264,20 +265,31 @@ export default function Laserr({ branchId }) {
     })
   
     const finalY = doc.lastAutoTable.finalY + 10
+    const tableWidth = 182
+    const startX = (pageWidth - tableWidth) / 2
   
-    doc.setFillColor(230, 240, 255)
-    doc.roundedRect(14, finalY, 182, 32, 3, 3, 'F')
-  
-    doc.setFontSize(11)
-    doc.setTextColor(30, 30, 30)
-    doc.setFont(undefined, 'bold')
-    doc.text('Resumen de conversión', 20, finalY + 9)
-  
-    doc.setFont(undefined, 'normal')
-    doc.setFontSize(10)
-    doc.text(`Leads a membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)}`, 20, finalY + 17)
-    doc.text(`Asistidos a membresía: ${pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)}`, 20, finalY + 24)
-    doc.text(`Total conversiones: ${stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro}`, 20, finalY + 31)
+    autoTable(doc, {
+      startY: finalY,
+      body: [
+        ['Leads a membresía', pct(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro, stats.leads)],
+        ['Asistidos a membresía', pct(stats.compraronEnMomento + stats.compraronDespues, stats.asistidos)],
+        ['Total conversiones', String(stats.compraronEnMomento + stats.compraronDespues + stats.sinIntro)]
+      ],
+      theme: 'plain',
+      tableWidth: tableWidth,
+      margin: { left: startX },
+      styles: { fontSize: 10, cellPadding: 4, fillColor: [230, 240, 255] },
+      columnStyles: {
+        0: { fontStyle: 'bold', textColor: [30, 30, 30] },
+        1: { halign: 'right', fontStyle: 'bold', textColor: [30, 30, 30] }
+      },
+      didParseCell: (data) => {
+        if (data.row.index === 0) {
+          data.cell.styles.lineWidth = { top: 0.3 }
+          data.cell.styles.lineColor = [200, 210, 230]
+        }
+      }
+    })
   
     const pdfBase64 = doc.output('datauristring').split(',')[1]
   
