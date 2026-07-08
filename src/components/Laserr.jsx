@@ -26,17 +26,40 @@ const membershipLabel = (type) => {
 }
 
 export default function Laserr({ branchId }) {
-  const [dateFrom, setDateFrom] = useState(firstOfMonth)
-  const [dateTo, setDateTo] = useState(todayStr)
+  const [dateFrom, setDateFrom] = useState(() => {
+    return sessionStorage.getItem(`laserr_dateFrom_${branchId}`) || firstOfMonth
+  })
+  const [dateTo, setDateTo] = useState(() => {
+    return sessionStorage.getItem(`laserr_dateTo_${branchId}`) || todayStr
+  })
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState(null)
-  const [modal, setModal] = useState(null)
+  const [modal, setModal] = useState(() => {
+    const saved = sessionStorage.getItem(`laserr_modal_${branchId}`)
+    return saved ? JSON.parse(saved) : null
+  })
   const [exporting, setExporting] = useState(false)
   const [exportMsg, setExportMsg] = useState(null)
 
   useEffect(() => {
     if (branchId) fetchData()
   }, [branchId])
+
+  useEffect(() => {
+    sessionStorage.setItem(`laserr_dateFrom_${branchId}`, dateFrom)
+  }, [dateFrom, branchId])
+
+  useEffect(() => {
+    sessionStorage.setItem(`laserr_dateTo_${branchId}`, dateTo)
+  }, [dateTo, branchId])
+
+  useEffect(() => {
+    if (modal) {
+      sessionStorage.setItem(`laserr_modal_${branchId}`, JSON.stringify(modal))
+    } else {
+      sessionStorage.removeItem(`laserr_modal_${branchId}`)
+    }
+  }, [modal, branchId])
 
   async function fetchData() {
     setLoading(true)
@@ -239,18 +262,18 @@ export default function Laserr({ branchId }) {
     const { data: { user } } = await supabase.auth.getUser()
     const email = user?.email
     if (!email || !stats) return
-  
+
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
-  
+
     doc.setFontSize(18)
     doc.setTextColor(30, 30, 30)
     doc.text('Laserr - Funnel de conversión', pageWidth / 2, 30, { align: 'center' })
-  
+
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
     doc.text(`Período: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, pageWidth / 2, 38, { align: 'center' })
-  
+
     autoTable(doc, {
       startY: 48,
       head: [['Paso', 'Descripción', 'Valor', '% paso anterior']],
@@ -263,11 +286,11 @@ export default function Laserr({ branchId }) {
         3: { halign: 'center' }
       }
     })
-  
+
     const finalY = doc.lastAutoTable.finalY + 10
     const tableWidth = 182
     const startX = (pageWidth - tableWidth) / 2
-  
+
     autoTable(doc, {
       startY: finalY,
       body: [
@@ -290,9 +313,9 @@ export default function Laserr({ branchId }) {
         }
       }
     })
-  
+
     const pdfBase64 = doc.output('datauristring').split(',')[1]
-  
+
     setExporting(true)
     try {
       await fetch('https://n8n.clubpilatesia.es/webhook/export-laserr-pdf', {
