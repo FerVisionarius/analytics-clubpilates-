@@ -149,7 +149,9 @@ export default function Laserr({ branchId }) {
       .lte('contract_start', toISO)
 
     if (nuevasMembresias) {
-      const sinIntroRows = nuevasMembresias.filter(m => !asistidosIds.includes(m.user_id))
+      const sinIntroRows = nuevasMembresias.filter(
+        m => !asistidosIds.includes(m.user_id) && m.plan_name !== null
+      )
 
       const sinIntroUserIds = sinIntroRows.map(m => m.user_id)
       const missingIds = sinIntroUserIds.filter(id => !peopleMap[id])
