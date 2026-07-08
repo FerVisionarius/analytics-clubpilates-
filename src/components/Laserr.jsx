@@ -449,54 +449,56 @@ export default function Laserr({ branchId }) {
         </div>
       )}
 
-      {modal && (
-        <div
-          className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
-          onClick={() => setModal(null)}
-        >
-          <div
-            className="bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl"
-            onClick={e => e.stopPropagation()}
+{modal && (
+  <div
+    className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
+    onClick={() => setModal(null)}
+  >
+    <div
+      className="bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-xl"
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300 flex-shrink-0">
+        <h3 className="text-text-100 font-semibold">{modal.title}</h3>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-text-200">{modal.people.length} personas</span>
+          <button
+            onClick={() => setModal(null)}
+            className="text-text-200 hover:text-text-100 transition-colors text-lg leading-none"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
-              <h3 className="text-text-100 font-semibold">{modal.title}</h3>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-text-200">{modal.people.length} personas</span>
-                <button
-                  onClick={() => setModal(null)}
-                  className="text-text-200 hover:text-text-100 transition-colors text-lg leading-none"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-1">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-bg-200 border-b border-bg-300">
-                  <tr>
-                    <th className="text-left text-xs text-primary-300 font-medium px-6 py-3">Nombre</th>
-                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Email</th>
-                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Alta</th>
-                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Membresía</th>
-                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Compra</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modal.people.map((p, i) => (
-                    <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
-                      <td className="px-6 py-3 text-text-100 font-medium">{p.name || '—'}</td>
-                      <td className="px-4 py-3 text-text-200">{p.email || '—'}</td>
-                      <td className="px-4 py-3 text-text-200">{formatDate(p.created_at)}</td>
-                      <td className="px-4 py-3 text-text-200">{p.membership_type ? membershipLabel(p.membership_type) : '—'}</td>
-                      <td className="px-4 py-3 text-text-200">{formatDate(p.membership_start_date)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            ✕
+          </button>
         </div>
-      )}
+      </div>
+      <div className="overflow-y-scroll overflow-x-auto flex-1">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-bg-200 border-b border-bg-300 z-10">
+            <tr>
+              <th className="text-left text-xs text-primary-300 font-medium px-6 py-3 whitespace-nowrap">Nombre</th>
+              <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Email</th>
+              <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Alta</th>
+              <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Membresía</th>
+              <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Compra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {modal.people.map((p, i) => (
+              <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
+                <td className="px-6 py-3 text-text-100 font-medium whitespace-nowrap">{p.name || '—'}</td>
+                <td className="px-4 py-3 text-text-200 whitespace-nowrap">{p.email || '—'}</td>
+                <td className="px-4 py-3 text-text-200 whitespace-nowrap">{formatDate(p.created_at)}</td>
+                <td className="px-4 py-3 text-text-200 max-w-xs truncate" title={p.membership_type ? membershipLabel(p.membership_type) : '—'}>
+                  {p.membership_type ? membershipLabel(p.membership_type) : '—'}
+                </td>
+                <td className="px-4 py-3 text-text-200 whitespace-nowrap">{formatDate(p.membership_start_date)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }
