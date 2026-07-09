@@ -697,13 +697,13 @@ export default function HeatmapOcupacion({ branchId }) {
                           onClick={() => openClassModal(ev, timeLabel)}
                         >
                           {survey && (
-                            <span
-                              className="absolute top-0.5 right-0.5 text-xs leading-none"
-                              title={`${(survey.sum / survey.count).toFixed(1)} ★ (${survey.count} valoraciones)`}
-                            >
-                              ⭐
-                            </span>
-                          )}
+                              <span
+                                className="absolute top-0.5 right-0.5 text-base leading-none drop-shadow"
+                                title={`${(survey.sum / survey.count).toFixed(1)} ★ (${survey.count} valoraciones)`}
+                              >
+                                ⭐
+                              </span>
+                            )}
                           <div className="px-1.5 py-1 h-full flex flex-col justify-start overflow-hidden">
                             {height >= 18 && (
                               <p className="text-xs font-semibold leading-tight truncate" style={{ color: colors.text }}>
