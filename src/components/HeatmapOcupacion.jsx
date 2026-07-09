@@ -34,6 +34,18 @@ function formatDate(date) {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
+function formatDateTime(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('es-ES', {
+    timeZone: 'Europe/Madrid',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function getMadridTime(utcDate) {
   const d = new Date(utcDate)
   const madridOffset = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }))
@@ -235,6 +247,8 @@ export default function HeatmapOcupacion({ branchId }) {
   const [tooltip, setTooltip] = useState(null)
   const [classModal, setClassModal] = useState(null)
   const [bookingIndex, setBookingIndex] = useState({ byEventTime: {}, byMadridKey: {} })
+  const [surveyIndex, setSurveyIndex] = useState({})
+  const [surveyModal, setSurveyModal] = useState(null)
   const scrollRef = useRef(null)
 
   useEffect(() => {
@@ -380,6 +394,29 @@ export default function HeatmapOcupacion({ branchId }) {
     const names = [...new Set(allClasses.map(c => c.name).filter(Boolean))].sort()
     setAllClassNames(names)
     setClassesData(laid)
+
+    // Índice de valoraciones por event_id (agregado, sin distinguir semana)
+    const eventIds = [...new Set(allClasses.map(c => c.event_id).filter(Boolean))]
+    let surveyMap = {}
+
+    if (eventIds.length > 0) {
+      const { data: answers } = await supabase
+        .from('class_survey_answers')
+        .select('response_id, answer_type, answer_numeric, class_survey_responses!inner(event_id)')
+        .in('class_survey_responses.event_id', eventIds)
+        .eq('answer_type', 'numeric')
+
+      if (answers) {
+        answers.forEach(a => {
+          const eid = a.class_survey_responses.event_id
+          if (!surveyMap[eid]) surveyMap[eid] = { sum: 0, count: 0 }
+          surveyMap[eid].sum += a.answer_numeric
+          surveyMap[eid].count += 1
+        })
+      }
+    }
+    setSurveyIndex(surveyMap)
+
     setLoading(false)
   }
 
@@ -477,6 +514,19 @@ export default function HeatmapOcupacion({ branchId }) {
     }))
 
     setClassModal(prev => prev ? { ...prev, attendees, loading: false } : null)
+  }
+
+  async function openSurveyModal(ev) {
+    setClassModal(null)
+    setSurveyModal({ ev, responses: [], loading: true })
+
+    const { data: responses } = await supabase
+      .from('class_survey_responses')
+      .select('id, user_id, submitted_at, class_survey_answers(question_key, question_label, answer_type, answer_numeric, answer_text)')
+      .eq('event_id', ev.eventId)
+      .order('submitted_at', { ascending: false })
+
+    setSurveyModal({ ev, responses: responses || [], loading: false })
   }
 
   function attendedLabel(attended, status) {
@@ -622,6 +672,7 @@ export default function HeatmapOcupacion({ branchId }) {
                       const endH = Math.floor((START_HOUR * 60 + ev.startMin + ev.duration) / 60)
                       const endM = (START_HOUR * 60 + ev.startMin + ev.duration) % 60
                       const timeLabel = `${String(START_HOUR + Math.floor(ev.startMin / 60)).padStart(2,'0')}:${String(ev.startMin % 60).padStart(2,'0')} - ${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`
+                      const survey = ev.eventId ? surveyIndex[ev.eventId] : null
 
                       return (
                         <div
@@ -645,6 +696,14 @@ export default function HeatmapOcupacion({ branchId }) {
                           onMouseLeave={() => setTooltip(null)}
                           onClick={() => openClassModal(ev, timeLabel)}
                         >
+                          {survey && (
+                            <span
+                              className="absolute top-0.5 right-0.5 text-xs leading-none"
+                              title={`${(survey.sum / survey.count).toFixed(1)} ★ (${survey.count} valoraciones)`}
+                            >
+                              ⭐
+                            </span>
+                          )}
                           <div className="px-1.5 py-1 h-full flex flex-col justify-start overflow-hidden">
                             {height >= 18 && (
                               <p className="text-xs font-semibold leading-tight truncate" style={{ color: colors.text }}>
@@ -699,6 +758,10 @@ export default function HeatmapOcupacion({ branchId }) {
             <span>{label}</span>
           </div>
         ))}
+        <div className="flex items-center gap-1">
+          <span>⭐</span>
+          <span>Clase con valoraciones</span>
+        </div>
       </div>
 
       {/* Tooltip */}
@@ -741,6 +804,14 @@ export default function HeatmapOcupacion({ branchId }) {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {classModal.ev.eventId && surveyIndex[classModal.ev.eventId] && (
+                  <button
+                    onClick={() => openSurveyModal(classModal.ev)}
+                    className="text-xs text-accent-200 hover:text-accent-300 font-medium"
+                  >
+                    Ver valoraciones
+                  </button>
+                )}
                 <span className="text-xs text-text-200">
                   {classModal.loading ? '…' : `${classModal.attendees.length} reservas`}
                 </span>
@@ -792,6 +863,45 @@ export default function HeatmapOcupacion({ branchId }) {
                     ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal valoraciones */}
+      {surveyModal && (
+        <div
+          className="fixed inset-0 bg-text-100/40 z-50 flex items-center justify-center px-4"
+          onClick={() => setSurveyModal(null)}
+        >
+          <div
+            className="bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
+              <h3 className="text-text-100 font-semibold">Valoraciones — {surveyModal.ev.name}</h3>
+              <button onClick={() => setSurveyModal(null)} className="text-text-200 hover:text-text-100 text-lg leading-none">✕</button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-6 space-y-4">
+              {surveyModal.loading ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : surveyModal.responses.length === 0 ? (
+                <p className="text-text-200 text-sm text-center py-12">Sin valoraciones</p>
+              ) : (
+                surveyModal.responses.map(r => (
+                  <div key={r.id} className="border border-bg-300 rounded-xl p-4">
+                    <p className="text-xs text-text-200 mb-2">{formatDateTime(r.submitted_at)}</p>
+                    {r.class_survey_answers.map((a, i) => (
+                      <p key={i} className="text-sm text-text-100 mb-1">
+                        <span className="font-medium">{a.question_label}:</span>{' '}
+                        {a.answer_type === 'numeric' ? `${a.answer_numeric} (${a.answer_text})` : a.answer_text}
+                      </p>
+                    ))}
+                  </div>
+                ))
               )}
             </div>
           </div>
