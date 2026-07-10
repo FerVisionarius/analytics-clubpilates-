@@ -231,11 +231,13 @@ export default function AdminUsuarios() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-medium text-text-100 truncate">{u.full_name || '—'}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
-                    u.role === 'admin'
-                      ? 'bg-primary-100 border-primary-200 text-accent-200'
-                      : 'bg-white border-primary-200 text-text-200'
+                    u.role === 'superadmin'
+                      ? 'bg-purple-50 border-purple-200 text-purple-700'
+                      : u.role === 'admin'
+                        ? 'bg-primary-100 border-primary-200 text-accent-200'
+                        : 'bg-white border-primary-200 text-text-200'
                   }`}>
-                    {u.role === 'admin' ? 'Admin' : 'Manager'}
+                    {u.role === 'superadmin' ? 'SuperAdmin' : u.role === 'admin' ? 'Admin' : 'Manager'}
                   </span>
                   {u.status === 'pending' && (
                     <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 bg-amber-50 border-amber-200 text-amber-700">
@@ -253,9 +255,9 @@ export default function AdminUsuarios() {
                     )) || <span className="text-xs text-red-400">Sin centros asignados</span>}
                   </div>
                 )}
-                {u.role === 'admin' && (
-                  <p className="text-xs text-primary-300 mt-1">Acceso a todos los centros</p>
-                )}
+                    {(u.role === 'admin' || u.role === 'superadmin') && (
+                    <p className="text-xs text-primary-300 mt-1">Acceso a todos los centros</p>
+                    )}
               </div>
 
               {/* Actions */}
