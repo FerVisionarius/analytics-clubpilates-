@@ -251,6 +251,23 @@ export default function HeatmapOcupacion({ branchId }) {
   const [surveyModal, setSurveyModal] = useState(null)
   const scrollRef = useRef(null)
 
+  const [surveyButtonEnabled, setSurveyButtonEnabled] = useState(false)
+  const [sendingSurvey, setSendingSurvey] = useState(false)
+  
+  async function enviarEncuestaManual(ev) {
+    setSendingSurvey(true)
+    try {
+      await fetch('https://n8n.clubpilatesia.es/webhook/boton-encuesta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: ev.eventId, branch_id: branchId })
+      })
+    } catch (err) {
+      console.error('Error enviando encuesta:', err)
+    }
+    setSendingSurvey(false)
+  }
+
   useEffect(() => {
     setSelectedInstructor('')
     setSelectedClassName('')
@@ -276,6 +293,16 @@ export default function HeatmapOcupacion({ branchId }) {
 
   async function fetchData() {
     setLoading(true)
+
+    const { data: featureFlag } = await supabase
+  .from('branch_features')
+  .select('enabled')
+  .eq('branch_id', branchId)
+  .eq('feature_key', 'envio_encuesta_manual')
+  .maybeSingle()
+
+setSurveyButtonEnabled(featureFlag?.enabled === true)
+    
 
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekEnd.getDate() + 7)
@@ -821,6 +848,17 @@ export default function HeatmapOcupacion({ branchId }) {
                 >
                   ✕
                 </button>
+
+                {surveyButtonEnabled && (
+                    <button
+                      onClick={() => enviarEncuestaManual(classModal.ev)}
+                      disabled={sendingSurvey}
+                      className="text-xs text-accent-200 hover:text-accent-300 font-medium disabled:opacity-50"
+                    >
+                      {sendingSurvey ? 'Enviando...' : 'Enviar encuesta'}
+                    </button>
+                  )}
+
               </div>
             </div>
             <div className="overflow-y-auto flex-1">

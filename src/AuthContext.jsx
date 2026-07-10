@@ -119,14 +119,15 @@ export function AuthProvider({ children }) {
     }
   }, [user, resetInactivityTimer])
 
-  const isAdmin = profile?.role === 'admin'
-  const allowedBranchIds = profile?.branch_ids ?? []
+  const isSuperAdmin = profile?.role === 'superadmin'
+const isAdmin = profile?.role === 'admin' || isSuperAdmin
+const allowedBranchIds = profile?.branch_ids ?? []
 
-  return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, allowedBranchIds, signIn, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  )
+return (
+  <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, signIn, signOut }}>
+    {children}
+  </AuthContext.Provider>
+)
 }
 
 export function useAuth() {

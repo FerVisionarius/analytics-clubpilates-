@@ -13,10 +13,19 @@ import ForgotPassword from './ForgotPassword'
 import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
+import AjustesFuncionalidades from './AjustesFuncionalidades'
 
 function SociosPage() {
   const { branchId } = useParams()
   return <EstadisticasSocios branchId={branchId} />
+}
+
+function AjustesPage() {
+  const { isSuperAdmin } = useAuth()
+  const navigate = useNavigate()
+  useEffect(() => { if (!isSuperAdmin) navigate('/') }, [isSuperAdmin])
+  if (!isSuperAdmin) return null
+  return <AjustesFuncionalidades />
 }
 
 function ProtectedRoute({ children }) {
@@ -123,6 +132,7 @@ function AppRoutes() {
         <Route path="laserr" element={<LaserrPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
+        <Route path="ajustes" element={<AjustesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

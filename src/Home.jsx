@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from './AuthContext'
-import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS } from './navConfig'
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS } from './navConfig'
 
 function HomeCard({ to, icon, label, desc }) {
   return (
@@ -21,7 +21,7 @@ function HomeCard({ to, icon, label, desc }) {
 
 export default function Home() {
   const { branchId } = useParams()
-  const { isAdmin } = useAuth()
+  const { isAdmin, isSuperAdmin } = useAuth()
   const base = `/centro/${branchId}`
 
   return (
@@ -62,6 +62,23 @@ export default function Home() {
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 mb-3">Administración</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {ADMIN_NAV_ITEMS.map(item => (
+              <HomeCard
+                key={item.id}
+                to={`${base}/${item.id}`}
+                icon={item.icon}
+                label={item.label}
+                desc={item.desc}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {isSuperAdmin && (
+        <>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 mb-3 mt-8">Ajustes</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {SUPERADMIN_NAV_ITEMS.map(item => (
               <HomeCard
                 key={item.id}
                 to={`${base}/${item.id}`}

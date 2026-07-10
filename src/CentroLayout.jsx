@@ -3,7 +3,7 @@ import { useParams, useNavigate, NavLink, Outlet, useLocation, Link } from 'reac
 import { useAuth } from './AuthContext'
 import { supabase } from './lib/supabase'
 import logo from './assets/logo-clubpilates.png'
-import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle } from './navConfig'
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle } from './navConfig'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -16,7 +16,7 @@ export default function CentroLayout() {
   const { branchId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, isAdmin, allowedBranchIds, signOut } = useAuth()
+  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, signOut } = useAuth()
   const [branch, setBranch] = useState(null)
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -164,6 +164,20 @@ export default function CentroLayout() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Administración</p>
                   <nav className="space-y-0.5">
                     {ADMIN_NAV_ITEMS.map(item => (
+                      <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
+                        {item.sidebarIcon}
+                        {item.label}
+                      </NavLink>
+                    ))}
+                  </nav>
+                </div>
+              )}
+
+              {isSuperAdmin && (
+                <div className="mt-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Ajustes</p>
+                  <nav className="space-y-0.5">
+                    {SUPERADMIN_NAV_ITEMS.map(item => (
                       <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                         {item.sidebarIcon}
                         {item.label}
