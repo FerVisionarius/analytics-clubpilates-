@@ -260,7 +260,11 @@ export default function HeatmapOcupacion({ branchId }) {
       await fetch('https://n8n.clubpilatesia.es/webhook/boton-encuesta', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_id: ev.eventId, branch_id: branchId })
+        body: JSON.stringify({
+          event_id: ev.eventId,
+          branch_id: branchId,
+          scheduled_at: ev.scheduledAt
+        })
       })
     } catch (err) {
       console.error('Error enviando encuesta:', err)
@@ -850,14 +854,14 @@ setSurveyButtonEnabled(featureFlag?.enabled === true)
                 </button>
 
                 {surveyButtonEnabled && (
-                    <button
-                      onClick={() => enviarEncuestaManual(classModal.ev)}
-                      disabled={sendingSurvey}
-                      className="text-xs text-accent-200 hover:text-accent-300 font-medium disabled:opacity-50"
-                    >
-                      {sendingSurvey ? 'Enviando...' : 'Enviar encuesta'}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => enviarEncuestaManual(classModal.ev)}
+                    disabled={sendingSurvey}
+                    className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    {sendingSurvey ? 'Enviando...' : 'Enviar encuesta'}
+                  </button>
+                )}
 
               </div>
             </div>
