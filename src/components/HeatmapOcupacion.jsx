@@ -250,11 +250,15 @@ export default function HeatmapOcupacion({ branchId }) {
   const [surveyIndex, setSurveyIndex] = useState({})
   const [surveyModal, setSurveyModal] = useState(null)
   const scrollRef = useRef(null)
+  const [surveySentMsg, setSurveySentMsg] = useState(false)
 
   const [surveyButtonEnabled, setSurveyButtonEnabled] = useState(false)
   const [sendingSurvey, setSendingSurvey] = useState(false)
   
   async function enviarEncuestaManual(ev) {
+    const confirmado = window.confirm('¿Está seguro que desea enviar esta encuesta a los asistentes?')
+    if (!confirmado) return
+  
     setSendingSurvey(true)
     try {
       await fetch('https://n8n.clubpilatesia.es/webhook/boton-encuesta', {
@@ -266,6 +270,8 @@ export default function HeatmapOcupacion({ branchId }) {
           scheduled_at: ev.scheduledAt
         })
       })
+      setSurveySentMsg(true)
+      setTimeout(() => setSurveySentMsg(false), 3000)
     } catch (err) {
       console.error('Error enviando encuesta:', err)
     }
@@ -854,14 +860,19 @@ setSurveyButtonEnabled(featureFlag?.enabled === true)
                 </button>
 
                 {surveyButtonEnabled && (
-                  <button
-                    onClick={() => enviarEncuestaManual(classModal.ev)}
-                    disabled={sendingSurvey}
-                    className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    {sendingSurvey ? 'Enviando...' : 'Enviar encuesta'}
-                  </button>
-                )}
+                      <>
+                        <button
+                          onClick={() => enviarEncuestaManual(classModal.ev)}
+                          disabled={sendingSurvey}
+                          className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          {sendingSurvey ? 'Enviando...' : 'Enviar encuesta'}
+                        </button>
+                        {surveySentMsg && (
+                          <span className="text-xs text-green-600 font-medium">Encuesta enviada</span>
+                        )}
+                      </>
+                    )}
 
               </div>
             </div>
