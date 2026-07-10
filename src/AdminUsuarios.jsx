@@ -70,7 +70,6 @@ function CentrosSelector({ selected, onChange }) {
   )
 }
 
-
 export default function AdminUsuarios() {
   const { isSuperAdmin } = useAuth()
   const [usuarios, setUsuarios] = useState([])
@@ -109,7 +108,6 @@ export default function AdminUsuarios() {
     e.preventDefault()
     setSaving(true)
     try {
-      // Obtener token de sesión actual para pasarlo a la edge function
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('No hay sesión activa')
 
@@ -124,7 +122,7 @@ export default function AdminUsuarios() {
           email: inviteEmail,
           full_name: inviteName,
           role: inviteRole,
-          branch_ids: inviteRole === 'admin' ? [] : inviteBranches,
+          branch_ids: inviteRole === 'manager' ? inviteBranches : [],
         })
       })
       const data = await response.json()
@@ -141,12 +139,13 @@ export default function AdminUsuarios() {
 
   async function handleEdit(e) {
     e.preventDefault()
+    if (selected.role === 'superadmin' && !isSuperAdmin) return
     setSaving(true)
     const { error } = await supabase
       .from('user_profiles')
       .update({
         role: editRole,
-        branch_ids: editRole === 'admin' ? [] : editBranches,
+        branch_ids: editRole === 'manager' ? editBranches : [],
       })
       .eq('id', selected.id)
     if (error) showToast('Error al guardar: ' + error.message, 'error')
@@ -159,6 +158,7 @@ export default function AdminUsuarios() {
   }
 
   async function handleDelete() {
+    if (selected.role === 'superadmin' && !isSuperAdmin) return
     setSaving(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -185,6 +185,7 @@ export default function AdminUsuarios() {
   }
 
   function openEdit(u) {
+    if (u.role === 'superadmin' && !isSuperAdmin) return
     setSelected(u)
     setEditRole(u.role)
     setEditBranches(u.branch_ids || [])
@@ -192,6 +193,7 @@ export default function AdminUsuarios() {
   }
 
   function openDelete(u) {
+    if (u.role === 'superadmin' && !isSuperAdmin) return
     setSelected(u)
     setModal('delete')
   }
@@ -199,6 +201,12 @@ export default function AdminUsuarios() {
   function getCentroNames(ids) {
     if (!ids || ids.length === 0) return null
     return ids.map(id => CENTROS.find(c => c.id === id)?.name || id)
+  }
+
+  function roleBadge(role) {
+    if (role === 'superadmin') return { label: 'SuperAdmin', cls: 'bg-purple-50 border-purple-200 text-purple-700' }
+    if (role === 'admin') return { label: 'Admin', cls: 'bg-primary-100 border-primary-200 text-accent-200' }
+    return { label: 'Manager', cls: 'bg-white border-primary-200 text-text-200' }
   }
 
   return (
@@ -223,67 +231,64 @@ export default function AdminUsuarios() {
         <div className="flex items-center justify-center h-48 text-primary-300 text-sm">Cargando...</div>
       ) : (
         <div className="space-y-2">
-          {usuarios.map(u => (
-            <div key={u.id} className="bg-bg-200 border border-bg-300 rounded-xl px-5 py-4 flex items-center gap-4">
-              <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 text-sm font-semibold text-accent-200">
-                {(u.full_name || u.email || '?')[0].toUpperCase()}
-              </div>
+          {usuarios.map(u => {
+            const badge = roleBadge(u.role)
+            const locked = u.role === 'superadmin' && !isSuperAdmin
+            return (
+              <div key={u.id} className="bg-bg-200 border border-bg-300 rounded-xl px-5 py-4 flex items-center gap-4">
+                <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 text-sm font-semibold text-accent-200">
+                  {(u.full_name || u.email || '?')[0].toUpperCase()}
+                </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium text-text-100 truncate">{u.full_name || '—'}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
-                    u.role === 'superadmin'
-                      ? 'bg-purple-50 border-purple-200 text-purple-700'
-                      : u.role === 'admin'
-                        ? 'bg-primary-100 border-primary-200 text-accent-200'
-                        : 'bg-white border-primary-200 text-text-200'
-                  }`}>
-                    {u.role === 'superadmin' ? 'SuperAdmin' : u.role === 'admin' ? 'Admin' : 'Manager'}
-                  </span>
-                  {u.status === 'pending' && (
-                    <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 bg-amber-50 border-amber-200 text-amber-700">
-                      ⏳ Pendiente de aceptar
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-text-100 truncate">{u.full_name || '—'}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${badge.cls}`}>
+                      {badge.label}
                     </span>
+                    {u.status === 'pending' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 bg-amber-50 border-amber-200 text-amber-700">
+                        ⏳ Pendiente de aceptar
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-primary-300 truncate mt-0.5">{u.email}</p>
+                  {u.role === 'manager' && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {getCentroNames(u.branch_ids)?.map(name => (
+                        <span key={name} className="text-xs bg-primary-100 text-text-200 px-2 py-0.5 rounded-md">
+                          {name}
+                        </span>
+                      )) || <span className="text-xs text-red-400">Sin centros asignados</span>}
+                    </div>
+                  )}
+                  {(u.role === 'admin' || u.role === 'superadmin') && (
+                    <p className="text-xs text-primary-300 mt-1">Acceso a todos los centros</p>
                   )}
                 </div>
-                <p className="text-xs text-primary-300 truncate mt-0.5">{u.email}</p>
-                {u.role === 'manager' && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {getCentroNames(u.branch_ids)?.map(name => (
-                      <span key={name} className="text-xs bg-primary-100 text-text-200 px-2 py-0.5 rounded-md">
-                        {name}
-                      </span>
-                    )) || <span className="text-xs text-red-400">Sin centros asignados</span>}
-                  </div>
-                )}
-                    {(u.role === 'admin' || u.role === 'superadmin') && (
-                    <p className="text-xs text-primary-300 mt-1">Acceso a todos los centros</p>
-                    )}
-              </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => openEdit(u)}
-                  className="text-xs text-text-200 hover:text-text-100 border border-primary-200 hover:border-accent-100 rounded-lg px-3 py-1.5 transition-colors"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => openDelete(u)}
-                  className="text-xs text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors"
-                >
-                  Eliminar
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => openEdit(u)}
+                    disabled={locked}
+                    className="text-xs text-text-200 hover:text-text-100 border border-primary-200 hover:border-accent-100 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => openDelete(u)}
+                    disabled={locked}
+                    className="text-xs text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
-      {/* Modal Invitar */}
       {modal === 'invite' && (
         <Modal title="Invitar nuevo usuario" onClose={() => setModal(null)}>
           <form onSubmit={handleInvite} className="space-y-4">
@@ -344,7 +349,6 @@ export default function AdminUsuarios() {
         </Modal>
       )}
 
-      {/* Modal Editar */}
       {modal === 'edit' && selected && (
         <Modal title={`Editar: ${selected.full_name || selected.email}`} onClose={() => setModal(null)}>
           <form onSubmit={handleEdit} className="space-y-4">
@@ -383,7 +387,6 @@ export default function AdminUsuarios() {
         </Modal>
       )}
 
-      {/* Modal Eliminar */}
       {modal === 'delete' && selected && (
         <Modal title="Eliminar usuario" onClose={() => setModal(null)}>
           <p className="text-text-200 text-sm mb-1">
@@ -405,7 +408,6 @@ export default function AdminUsuarios() {
         </Modal>
       )}
 
-      {/* Toast */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-xl border ${
           toast.type === 'error'
