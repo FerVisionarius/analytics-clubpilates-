@@ -14,6 +14,7 @@ import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
 import AjustesFuncionalidades from './AjustesFuncionalidades'
+import Informes from './Informes'
 
 function SociosPage() {
   const { branchId } = useParams()
@@ -136,6 +137,7 @@ function AppRoutes() {
         <Route path="laserr" element={<LaserrPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
+        <Route path="informes" element={<InformesPage />} />
         <Route path="ajustes" element={<AjustesPage />} />
       </Route>
 
@@ -179,6 +181,14 @@ function AdminUsuariosPage() {
   useEffect(() => { if (!isAdmin) navigate('/') }, [isAdmin])
   if (!isAdmin) return null
   return <AdminUsuarios />
+}
+
+function InformesPage() {
+  const { isAdmin } = useAuth()
+  const navigate = useNavigate()
+  useEffect(() => { if (!isAdmin) navigate('/') }, [isAdmin])
+  if (!isAdmin) return null
+  return <Informes />
 }
 
 export default function App() {
