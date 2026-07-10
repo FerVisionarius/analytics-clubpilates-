@@ -17,15 +17,19 @@ import AjustesFuncionalidades from './AjustesFuncionalidades'
 
 function SociosPage() {
   const { branchId } = useParams()
+  const { profile } = useAuth()
+  const navigate = useNavigate()
+  useEffect(() => { if (profile?.role === 'manager') navigate(`/centro/${branchId}/home`) }, [profile, branchId])
+  if (profile?.role === 'manager') return null
   return <EstadisticasSocios branchId={branchId} />
 }
 
 function AjustesPage() {
-  const { isSuperAdmin } = useAuth()
+  const { isAdmin, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => { if (!isSuperAdmin) navigate('/') }, [isSuperAdmin])
-  if (!isSuperAdmin) return null
-  return <AjustesFuncionalidades />
+  useEffect(() => { if (!isAdmin) navigate('/') }, [isAdmin])
+  if (!isAdmin) return null
+  return <AjustesFuncionalidades readOnly={!isSuperAdmin} />
 }
 
 function ProtectedRoute({ children }) {

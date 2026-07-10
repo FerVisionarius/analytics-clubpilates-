@@ -22,6 +22,7 @@ export default function CentroLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const isHome = location.pathname.endsWith('/home')
+  const visibleNavItems = NAV_ITEMS.filter(item => item.id !== 'miembros' || profile?.role !== 'manager')
 
   useEffect(() => {
     fetchBranches()
@@ -91,7 +92,9 @@ export default function CentroLayout() {
 
           <div className="flex items-center gap-3 shrink-0">
             {isAdmin && (
-              <span className="text-xs bg-primary-100 border border-primary-200 text-accent-200 px-2 py-0.5 rounded-full">Admin</span>
+              <span className="text-xs bg-primary-100 border border-primary-200 text-accent-200 px-2 py-0.5 rounded-full">
+                {isSuperAdmin ? 'SuperAdmin' : 'Admin'}
+              </span>
             )}
             <span className="text-xs text-text-200 hidden sm:block">{profile?.email}</span>
             <button
@@ -137,7 +140,7 @@ export default function CentroLayout() {
 
               <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas</p>
               <nav className="space-y-0.5">
-                {NAV_ITEMS.map(item => (
+                {visibleNavItems.map(item => (
                   <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                     {item.sidebarIcon}
                     {item.label}
@@ -173,7 +176,7 @@ export default function CentroLayout() {
                 </div>
               )}
 
-              {isSuperAdmin && (
+              {isAdmin && (
                 <div className="mt-6">
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Ajustes</p>
                   <nav className="space-y-0.5">

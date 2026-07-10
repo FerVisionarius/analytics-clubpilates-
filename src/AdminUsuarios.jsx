@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
+import { useAuth } from './AuthContext'
 
 const CENTROS = [
   { id: '60799c7835b8911c8545f043', name: 'Bonanova' },
@@ -69,7 +70,9 @@ function CentrosSelector({ selected, onChange }) {
   )
 }
 
+
 export default function AdminUsuarios() {
+  const { isSuperAdmin } = useAuth()
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // 'invite' | 'edit' | 'delete'
@@ -315,6 +318,7 @@ export default function AdminUsuarios() {
               >
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
+                {isSuperAdmin && <option value="superadmin">SuperAdmin</option>}
               </select>
             </div>
             {inviteRole === 'manager' && (
@@ -353,6 +357,7 @@ export default function AdminUsuarios() {
               >
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
+                {isSuperAdmin && <option value="superadmin">SuperAdmin</option>}
               </select>
             </div>
             {editRole === 'manager' && (

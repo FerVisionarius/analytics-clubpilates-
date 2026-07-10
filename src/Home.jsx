@@ -21,8 +21,10 @@ function HomeCard({ to, icon, label, desc }) {
 
 export default function Home() {
   const { branchId } = useParams()
-  const { isAdmin, isSuperAdmin } = useAuth()
+  const { isAdmin, profile } = useAuth()
   const base = `/centro/${branchId}`
+
+  const visibleNavItems = NAV_ITEMS.filter(item => item.id !== 'miembros' || profile?.role !== 'manager')
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -33,7 +35,7 @@ export default function Home() {
 
       <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 mb-3">Métricas</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {NAV_ITEMS.map(item => (
+        {visibleNavItems.map(item => (
           <HomeCard
             key={item.id}
             to={`${base}/${item.id}`}
@@ -71,11 +73,7 @@ export default function Home() {
               />
             ))}
           </div>
-        </>
-      )}
 
-      {isSuperAdmin && (
-        <>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 mb-3 mt-8">Ajustes</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SUPERADMIN_NAV_ITEMS.map(item => (

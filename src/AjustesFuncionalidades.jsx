@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 
-export default function AjustesFuncionalidades() {
+export default function AjustesFuncionalidades({ readOnly = false }) {
   const [branches, setBranches] = useState([])
   const [flags, setFlags] = useState({})
   const [loading, setLoading] = useState(true)
@@ -37,6 +37,7 @@ export default function AjustesFuncionalidades() {
   }
 
   async function toggleFlag(branchId, current) {
+    if (readOnly) return
     setSaving(branchId)
     const newValue = !current
 
@@ -59,7 +60,10 @@ export default function AjustesFuncionalidades() {
   return (
     <div>
       <h2 className="text-xl font-bold text-text-100 mb-1">Funcionalidades</h2>
-      <p className="text-text-200 text-sm mb-6">Activa o desactiva funciones por centro</p>
+      <p className="text-text-200 text-sm mb-6">
+        Activa o desactiva funciones por centro
+        {readOnly && <span className="text-amber-600"> · Solo lectura</span>}
+      </p>
 
       <div className="bg-bg-200 border border-bg-300 rounded-xl overflow-hidden">
         <button
@@ -107,10 +111,10 @@ export default function AjustesFuncionalidades() {
                       <span className="text-sm text-text-100">{b.name}</span>
                       <button
                         onClick={() => toggleFlag(b.branch_id, flags[b.branch_id])}
-                        disabled={saving === b.branch_id}
+                        disabled={readOnly || saving === b.branch_id}
                         className={`relative w-11 h-6 rounded-full transition-colors ${
                           flags[b.branch_id] ? 'bg-accent-200' : 'bg-primary-200'
-                        } disabled:opacity-50`}
+                        } disabled:opacity-50 ${readOnly ? 'cursor-not-allowed' : ''}`}
                       >
                         <span
                           className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
