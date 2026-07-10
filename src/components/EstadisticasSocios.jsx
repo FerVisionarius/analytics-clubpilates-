@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 function clasificarTipoSuscripcion(membership_type, plan_name) {
   if (membership_type === 'payg') return 'Pago por clase'
@@ -73,6 +75,8 @@ export default function EstadisticasSocios({ branchId }) {
   const [estadoSocios, setEstadoSocios] = useState([])
   const [tipoSocio, setTipoSocio] = useState([])
   const [sinSuscripcion, setSinSuscripcion] = useState(0)
+  const [exporting, setExporting] = useState(false)
+  const [exportMsg, setExportMsg] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -205,6 +209,96 @@ export default function EstadisticasSocios({ branchId }) {
     setLoading(false)
   }
 
+  async function exportarPDF() {
+    const { data: { user } } = await supabase.auth.getUser()
+    const email = user?.email
+    if (!email) return
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const todayStr = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
+
+    doc.setFontSize(18)
+    doc.setTextColor(30, 30, 30)
+    doc.text('Estadisticas de Socios', pageWidth / 2, 30, { align: 'center' })
+
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Estado al ${todayStr}`, pageWidth / 2, 38, { align: 'center' })
+
+    const totalCon = (filas) => filas.reduce((sum, f) => sum + f.cantidad, 0)
+    const pctRow = (filas, total) => filas.map(f => [
+      f.label,
+      String(f.cantidad),
+      total > 0 ? ((f.cantidad / total) * 100).toFixed(2) + '%' : '—',
+      ...(f.extra !== undefined ? [String(f.extra)] : [])
+    ])
+
+    const totalSuscripcion = totalCon(tipoSuscripcion)
+    autoTable(doc, {
+      startY: 48,
+      head: [['Tipo de Suscripción', 'Cantidad', '%', 'Clases est./sem']],
+      body: [
+        ...pctRow(tipoSuscripcion, totalSuscripcion),
+        ['Total general', String(totalSuscripcion), '100.00%', '—']
+      ],
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [225, 232, 240] },
+      styles: { fontSize: 9, cellPadding: 4 },
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' } }
+    })
+
+    const totalEstado = totalCon(estadoSocios)
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [['Estado de Socios', 'Cantidad', '%']],
+      body: [
+        ...pctRow(estadoSocios, totalEstado),
+        ['Total general', String(totalEstado), '100.00%']
+      ],
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [225, 232, 240] },
+      styles: { fontSize: 9, cellPadding: 4 },
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } }
+    })
+
+    if (sinSuscripcion > 0) {
+      doc.setFontSize(9)
+      doc.setTextColor(80, 80, 80)
+      doc.text(`Socios sin suscripción activa (pago por clase / clases privadas): ${sinSuscripcion}`, 14, doc.lastAutoTable.finalY + 10)
+    }
+
+    const totalSocio = totalCon(tipoSocio)
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + (sinSuscripcion > 0 ? 16 : 10),
+      head: [['Tipo de Socio', 'Cantidad', '%']],
+      body: [
+        ...pctRow(tipoSocio, totalSocio),
+        ['Total general', String(totalSocio), '100.00%']
+      ],
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [225, 232, 240] },
+      styles: { fontSize: 9, cellPadding: 4 },
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } }
+    })
+
+    const pdfBase64 = doc.output('datauristring').split(',')[1]
+
+    setExporting(true)
+    try {
+      await fetch('https://n8n.clubpilatesia.es/webhook/export-socios-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, pdfBase64, branchId })
+      })
+      setExportMsg('Informe enviado')
+    } catch (err) {
+      setExportMsg('Error al enviar')
+    }
+    setExporting(false)
+    setTimeout(() => setExportMsg(null), 3000)
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center h-64 text-text-200 text-sm">Cargando datos...</div>
   )
@@ -215,9 +309,23 @@ export default function EstadisticasSocios({ branchId }) {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <h2 className="text-xl font-bold text-text-100">Estadísticas de Socios</h2>
-        <p className="text-sm text-text-200 mt-1">Estado actual del centro seleccionado.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-text-100">Estadísticas de Socios</h2>
+          <p className="text-sm text-text-200 mt-1">Estado actual del centro seleccionado.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportarPDF}
+            disabled={exporting}
+            className="bg-accent-200 hover:bg-accent-100 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+          >
+            {exporting ? 'Enviando...' : 'Exportar PDF'}
+          </button>
+          {exportMsg && (
+            <span className="text-sm text-green-600 font-medium">{exportMsg}</span>
+          )}
+        </div>
       </div>
 
       <TablaEstadistica
