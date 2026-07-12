@@ -74,7 +74,7 @@ export default function EstadisticasSocios({ branchId }) {
     setLoading(true)
     setError(null)
 
-    const result = await fetchSociosStats(branchId)
+    const result = await fetchSociosStats(supabase, branchId)
     if (result.error) {
       setError(result.error)
       setLoading(false)

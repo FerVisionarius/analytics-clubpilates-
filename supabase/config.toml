@@ -1,2 +1,5 @@
 [functions.request-password-reset]
 verify_jwt = false
+
+[functions.monthly-report]
+import_map = "./functions/monthly-report/import_map.json"

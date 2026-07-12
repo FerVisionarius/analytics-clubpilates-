@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "jspdf-autotable": "npm:jspdf-autotable@5.0.8"
+  }
+}

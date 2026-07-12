@@ -56,7 +56,7 @@ export default function Laserr({ branchId }) {
   async function fetchData() {
     setLoading(true)
     setStats(null)
-    const result = await fetchLaserrStats(branchId, dateFrom, dateTo)
+    const result = await fetchLaserrStats(supabase, branchId, dateFrom, dateTo)
     setStats(result)
     setLoading(false)
   }

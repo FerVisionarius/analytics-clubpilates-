@@ -43,8 +43,8 @@ export default function Informes() {
       const email = user?.email
 
       const [laserrStats, sociosStats] = await Promise.all([
-        fetchLaserrStats(branchId, dateFrom, dateTo),
-        fetchSociosStats(branchId),
+        fetchLaserrStats(supabase, branchId, dateFrom, dateTo),
+        fetchSociosStats(supabase, branchId),
       ])
 
       if (!email || !laserrStats || sociosStats.error) {

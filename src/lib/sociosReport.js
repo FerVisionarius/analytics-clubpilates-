@@ -1,5 +1,4 @@
 import autoTable from 'jspdf-autotable'
-import { supabase } from './supabase'
 
 function clasificarTipoSuscripcion(membership_type, plan_name) {
   if (membership_type === 'payg') return 'Pago por clase'
@@ -13,13 +12,13 @@ function clasificarTipoSuscripcion(membership_type, plan_name) {
   return 'Sin clasificar'
 }
 
-export async function fetchSociosStats(branchId) {
+export async function fetchSociosStats(supabaseClient, branchId) {
   let allMembers = []
   let from = 0
   const pageSize = 1000
 
   while (true) {
-    const { data, error: queryError } = await supabase
+    const { data, error: queryError } = await supabaseClient
       .from('members')
       .select('membership_type, membership_status, plan_name, auto_renewal')
       .eq('branch_id', branchId)
@@ -67,7 +66,7 @@ export async function fetchSociosStats(branchId) {
   let sinSuscripcion = 0
   let fromSin = 0
   while (true) {
-    const { data: sinData } = await supabase
+    const { data: sinData } = await supabaseClient
       .from('members')
       .select('glofox_member_id')
       .eq('branch_id', branchId)

@@ -1,5 +1,4 @@
 import autoTable from 'jspdf-autotable'
-import { supabase } from './supabase'
 
 export const toMadridDate = (iso) => {
   const d = new Date(iso)
@@ -16,18 +15,18 @@ export function pct(num, den) {
   return Math.round((num / den) * 100) + '%'
 }
 
-export async function fetchLaserrStats(branchId, dateFrom, dateTo) {
+export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateTo) {
   const fromISO = dateFrom + 'T00:00:00+00:00'
   const toISO = dateTo + 'T23:59:59+00:00'
 
-  const { data: leads } = await supabase
+  const { data: leads } = await supabaseClient
     .from('members')
     .select('glofox_member_id, name, email, created_at')
     .eq('branch_id', branchId)
     .gte('created_at', fromISO)
     .lte('created_at', toISO)
 
-  const { data: activeClasses } = await supabase
+  const { data: activeClasses } = await supabaseClient
     .from('classes')
     .select('event_id')
     .eq('branch_id', branchId)
@@ -37,7 +36,7 @@ export async function fetchLaserrStats(branchId, dateFrom, dateTo) {
 
   const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
 
-  const { data: allBookings } = await supabase
+  const { data: allBookings } = await supabaseClient
     .from('bookings')
     .select('glofox_booking_id, user_id, attended, time_start, event_id, status')
     .eq('branch_id', branchId)
@@ -65,7 +64,7 @@ export async function fetchLaserrStats(branchId, dateFrom, dateTo) {
   const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds, ...noAsistieronIds])]
   const peopleMap = {}
   if (allUserIds.length > 0) {
-    const { data: allPeople } = await supabase
+    const { data: allPeople } = await supabaseClient
       .from('members')
       .select('glofox_member_id, name, email, created_at, status, membership_type, membership_start_date')
       .eq('branch_id', branchId)
@@ -89,7 +88,7 @@ export async function fetchLaserrStats(branchId, dateFrom, dateTo) {
 
   let sinIntroList = []
 
-  const { data: nuevasMembresias } = await supabase
+  const { data: nuevasMembresias } = await supabaseClient
     .from('new_memberships_log')
     .select('user_id, contract_start, event_created, member_state, plan_name')
     .eq('branch_id', branchId)
@@ -105,7 +104,7 @@ export async function fetchLaserrStats(branchId, dateFrom, dateTo) {
     const missingIds = sinIntroUserIds.filter(id => !peopleMap[id])
 
     if (missingIds.length > 0) {
-      const { data: extraPeople } = await supabase
+      const { data: extraPeople } = await supabaseClient
         .from('members')
         .select('glofox_member_id, name, email')
         .eq('branch_id', branchId)
@@ -128,7 +127,7 @@ export async function fetchLaserrStats(branchId, dateFrom, dateTo) {
 
   const primeraMembresiaMap = {}
   if (asistidosIds.length > 0) {
-    const { data: membresiasAsistidos } = await supabase
+    const { data: membresiasAsistidos } = await supabaseClient
       .from('new_memberships_log')
       .select('user_id, contract_start')
       .in('user_id', asistidosIds)
