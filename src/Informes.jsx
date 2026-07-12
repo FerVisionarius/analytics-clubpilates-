@@ -42,9 +42,10 @@ export default function Informes() {
       const { data: { user } } = await supabase.auth.getUser()
       const email = user?.email
 
-      const [laserrStats, sociosStats] = await Promise.all([
+      const [laserrStats, sociosStats, { data: branch }] = await Promise.all([
         fetchLaserrStats(supabase, branchId, dateFrom, dateTo),
         fetchSociosStats(supabase, branchId),
+        supabase.from('branches').select('name').eq('branch_id', branchId).single(),
       ])
 
       if (!email || !laserrStats || sociosStats.error) {
@@ -54,9 +55,9 @@ export default function Informes() {
       }
 
       const doc = new jsPDF()
-      renderLaserrPdfSection(doc, { stats: laserrStats, dateFrom, dateTo })
+      renderLaserrPdfSection(doc, { stats: laserrStats, dateFrom, dateTo, branchName: branch?.name })
       doc.addPage()
-      renderSociosPdfSection(doc, sociosStats)
+      renderSociosPdfSection(doc, { ...sociosStats, branchName: branch?.name })
       const pdfBase64 = doc.output('datauristring').split(',')[1]
 
       await fetch('https://n8n.clubpilatesia.es/webhook/export-general-pdf', {

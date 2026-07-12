@@ -55,9 +55,9 @@ serve(async (req) => {
       }
 
       const doc = new jsPDF()
-      renderLaserrPdfSection(doc, { stats: laserrStats, dateFrom, dateTo })
+      renderLaserrPdfSection(doc, { stats: laserrStats, dateFrom, dateTo, branchName: branch.name })
       doc.addPage()
-      renderSociosPdfSection(doc, sociosStats)
+      renderSociosPdfSection(doc, { ...sociosStats, branchName: branch.name })
       const pdfBase64 = doc.output('datauristring').split(',')[1]
 
       reports.push({ branchId: branch.branch_id, branchName: branch.name, pdfBase64 })

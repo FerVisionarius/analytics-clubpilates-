@@ -70,8 +70,14 @@ export default function Laserr({ branchId }) {
     const email = user?.email
     if (!email || !stats) return
 
+    const { data: branch } = await supabase
+      .from('branches')
+      .select('name')
+      .eq('branch_id', branchId)
+      .single()
+
     const doc = new jsPDF()
-    renderLaserrPdfSection(doc, { stats, dateFrom, dateTo })
+    renderLaserrPdfSection(doc, { stats, dateFrom, dateTo, branchName: branch?.name })
     const pdfBase64 = doc.output('datauristring').split(',')[1]
 
     setExporting(true)

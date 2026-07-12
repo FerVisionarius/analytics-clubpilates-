@@ -124,7 +124,7 @@ export async function fetchSociosStats(supabaseClient, branchId) {
   return { tipoSuscripcion, estadoSocios, tipoSocio, sinSuscripcion }
 }
 
-export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tipoSocio, sinSuscripcion }, startY = 30) {
+export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tipoSocio, sinSuscripcion, branchName }, startY = 30) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const todayStr = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
 
@@ -132,9 +132,17 @@ export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tip
   doc.setTextColor(30, 30, 30)
   doc.text('Estadisticas de Socios', pageWidth / 2, startY, { align: 'center' })
 
+  let subtitleY = startY + 8
+  if (branchName) {
+    doc.setFontSize(12)
+    doc.setTextColor(60, 60, 60)
+    doc.text(branchName, pageWidth / 2, subtitleY, { align: 'center' })
+    subtitleY += 7
+  }
+
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Estado al ${todayStr}`, pageWidth / 2, startY + 8, { align: 'center' })
+  doc.text(`Estado al ${todayStr}`, pageWidth / 2, subtitleY, { align: 'center' })
 
   const totalCon = (filas) => filas.reduce((sum, f) => sum + f.cantidad, 0)
   const pctRow = (filas, total) => filas.map(f => [
@@ -146,7 +154,7 @@ export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tip
 
   const totalSuscripcion = totalCon(tipoSuscripcion)
   autoTable(doc, {
-    startY: startY + 18,
+    startY: subtitleY + 10,
     head: [['Tipo de Suscripción', 'Cantidad', '%', 'Clases est./sem']],
     body: [
       ...pctRow(tipoSuscripcion, totalSuscripcion),

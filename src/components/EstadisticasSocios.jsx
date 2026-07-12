@@ -93,8 +93,14 @@ export default function EstadisticasSocios({ branchId }) {
     const email = user?.email
     if (!email) return
 
+    const { data: branch } = await supabase
+      .from('branches')
+      .select('name')
+      .eq('branch_id', branchId)
+      .single()
+
     const doc = new jsPDF()
-    renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tipoSocio, sinSuscripcion })
+    renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tipoSocio, sinSuscripcion, branchName: branch?.name })
     const pdfBase64 = doc.output('datauristring').split(',')[1]
 
     setExporting(true)

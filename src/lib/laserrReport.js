@@ -201,7 +201,7 @@ export function buildLaserrSteps(stats) {
   ]
 }
 
-export function renderLaserrPdfSection(doc, { stats, dateFrom, dateTo, startY = 30 }) {
+export function renderLaserrPdfSection(doc, { stats, dateFrom, dateTo, branchName, startY = 30 }) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const steps = buildLaserrSteps(stats)
 
@@ -209,12 +209,20 @@ export function renderLaserrPdfSection(doc, { stats, dateFrom, dateTo, startY = 
   doc.setTextColor(30, 30, 30)
   doc.text('Laserr - Funnel de conversión', pageWidth / 2, startY, { align: 'center' })
 
+  let subtitleY = startY + 8
+  if (branchName) {
+    doc.setFontSize(12)
+    doc.setTextColor(60, 60, 60)
+    doc.text(branchName, pageWidth / 2, subtitleY, { align: 'center' })
+    subtitleY += 7
+  }
+
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Período: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, pageWidth / 2, startY + 8, { align: 'center' })
+  doc.text(`Período: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, pageWidth / 2, subtitleY, { align: 'center' })
 
   autoTable(doc, {
-    startY: startY + 18,
+    startY: subtitleY + 10,
     head: [['Paso', 'Descripción', 'Valor', '% paso anterior']],
     body: steps.map(step => [step.label, step.desc, String(step.value), step.pct || '—']),
     headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
