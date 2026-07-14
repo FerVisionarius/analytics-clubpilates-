@@ -16,13 +16,18 @@ export default function CentroLayout() {
   const { branchId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, signOut } = useAuth()
+  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, hiddenNavItems, signOut } = useAuth()
   const [branch, setBranch] = useState(null)
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const isHome = location.pathname.endsWith('/home')
-  const visibleNavItems = NAV_ITEMS.filter(item => item.id !== 'miembros' || profile?.role !== 'manager')
+  const visibleNavItems = NAV_ITEMS.filter(item =>
+    (item.id !== 'miembros' || profile?.role !== 'manager') && !hiddenNavItems.includes(item.id)
+  )
+  const visibleAdvancedNavItems = ADVANCED_NAV_ITEMS.filter(item => !hiddenNavItems.includes(item.id))
+  const visibleAdminNavItems = ADMIN_NAV_ITEMS.filter(item => !hiddenNavItems.includes(item.id))
+  const visibleSuperadminNavItems = SUPERADMIN_NAV_ITEMS.filter(item => !hiddenNavItems.includes(item.id))
 
   useEffect(() => {
     fetchBranches()
@@ -148,11 +153,11 @@ export default function CentroLayout() {
                 ))}
               </nav>
 
-              {isAdmin && (
+              {isAdmin && visibleAdvancedNavItems.length > 0 && (
                 <div className="mt-6">
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas Avanzadas</p>
                   <nav className="space-y-0.5">
-                    {ADVANCED_NAV_ITEMS.map(item => (
+                    {visibleAdvancedNavItems.map(item => (
                       <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                         {item.sidebarIcon}
                         {item.label}
@@ -162,11 +167,11 @@ export default function CentroLayout() {
                 </div>
               )}
 
-              {isAdmin && (
+              {isAdmin && visibleAdminNavItems.length > 0 && (
                 <div className="mt-6">
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Administración</p>
                   <nav className="space-y-0.5">
-                    {ADMIN_NAV_ITEMS.map(item => (
+                    {visibleAdminNavItems.map(item => (
                       <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                         {item.sidebarIcon}
                         {item.label}
@@ -176,11 +181,11 @@ export default function CentroLayout() {
                 </div>
               )}
 
-              {isAdmin && (
+              {isAdmin && visibleSuperadminNavItems.length > 0 && (
                 <div className="mt-6">
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Ajustes</p>
                   <nav className="space-y-0.5">
-                    {SUPERADMIN_NAV_ITEMS.map(item => (
+                    {visibleSuperadminNavItems.map(item => (
                       <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
                         {item.sidebarIcon}
                         {item.label}

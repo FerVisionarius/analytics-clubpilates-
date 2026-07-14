@@ -122,9 +122,24 @@ export function AuthProvider({ children }) {
   const isSuperAdmin = profile?.role === 'superadmin'
   const isAdmin = profile?.role === 'admin' || isSuperAdmin
   const allowedBranchIds = profile?.branch_ids ?? []
+  const hiddenNavItems = profile?.hidden_nav_items ?? []
+
+  async function setNavItemHidden(itemId, hidden) {
+    if (!user) return
+    const current = profile?.hidden_nav_items ?? []
+    const next = hidden
+      ? [...new Set([...current, itemId])]
+      : current.filter(id => id !== itemId)
+
+    setProfile(prev => prev ? { ...prev, hidden_nav_items: next } : prev)
+    await supabase
+      .from('user_profiles')
+      .update({ hidden_nav_items: next })
+      .eq('id', user.id)
+  }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, hiddenNavItems, setNavItemHidden, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
