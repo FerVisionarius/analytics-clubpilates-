@@ -74,12 +74,11 @@ function HomeSection({ title, items, base, editMode, hiddenNavItems, setNavItemH
 
 export default function Home() {
   const { branchId } = useParams()
-  const { isAdmin, profile, hiddenNavItems, setNavItemHidden } = useAuth()
+  const { allowedNavItemIds, hiddenNavItems, setNavItemHidden } = useAuth()
   const base = `/centro/${branchId}`
   const [editMode, setEditMode] = useState(false)
 
-  const visibleNavItems = NAV_ITEMS.filter(item => item.id !== 'miembros' || profile?.role !== 'manager')
-
+  const roleFilter = item => allowedNavItemIds.includes(item.id)
   const sectionProps = { base, editMode, hiddenNavItems, setNavItemHidden }
 
   return (
@@ -101,15 +100,10 @@ export default function Home() {
         </button>
       </div>
 
-      <HomeSection title="Métricas" items={visibleNavItems} {...sectionProps} />
-
-      {isAdmin && (
-        <>
-          <HomeSection title="Métricas Avanzadas" items={ADVANCED_NAV_ITEMS} {...sectionProps} />
-          <HomeSection title="Administración" items={ADMIN_NAV_ITEMS} {...sectionProps} />
-          <HomeSection title="Ajustes" items={SUPERADMIN_NAV_ITEMS} {...sectionProps} />
-        </>
-      )}
+      <HomeSection title="Métricas" items={NAV_ITEMS.filter(roleFilter)} {...sectionProps} />
+      <HomeSection title="Métricas Avanzadas" items={ADVANCED_NAV_ITEMS.filter(roleFilter)} {...sectionProps} />
+      <HomeSection title="Administración" items={ADMIN_NAV_ITEMS.filter(roleFilter)} {...sectionProps} />
+      <HomeSection title="Ajustes" items={SUPERADMIN_NAV_ITEMS.filter(roleFilter)} {...sectionProps} />
     </div>
   )
 }

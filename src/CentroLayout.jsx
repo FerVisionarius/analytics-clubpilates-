@@ -69,14 +69,14 @@ export default function CentroLayout() {
   const { branchId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, hiddenNavItems, setNavItemHidden, signOut } = useAuth()
+  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, hiddenNavItems, setNavItemHidden, signOut } = useAuth()
   const [branch, setBranch] = useState(null)
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [editMode, setEditMode] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
-  const roleFilteredNavItems = NAV_ITEMS.filter(item => item.id !== 'miembros' || profile?.role !== 'manager')
+  const roleFilter = item => allowedNavItemIds.includes(item.id)
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
 
   useEffect(() => {
@@ -213,48 +213,42 @@ export default function CentroLayout() {
 
               <SidebarNavSection
                 title="Métricas"
-                items={roleFilteredNavItems}
+                items={NAV_ITEMS.filter(roleFilter)}
                 branchId={branchId}
                 editMode={editMode}
                 hiddenNavItems={hiddenNavItems}
                 onToggleHide={onToggleHide}
               />
 
-              {isAdmin && (
-                <SidebarNavSection
-                  title="Métricas Avanzadas"
-                  items={ADVANCED_NAV_ITEMS}
-                  branchId={branchId}
-                  editMode={editMode}
-                  hiddenNavItems={hiddenNavItems}
-                  onToggleHide={onToggleHide}
-                  className="mt-6"
-                />
-              )}
+              <SidebarNavSection
+                title="Métricas Avanzadas"
+                items={ADVANCED_NAV_ITEMS.filter(roleFilter)}
+                branchId={branchId}
+                editMode={editMode}
+                hiddenNavItems={hiddenNavItems}
+                onToggleHide={onToggleHide}
+                className="mt-6"
+              />
 
-              {isAdmin && (
-                <SidebarNavSection
-                  title="Administración"
-                  items={ADMIN_NAV_ITEMS}
-                  branchId={branchId}
-                  editMode={editMode}
-                  hiddenNavItems={hiddenNavItems}
-                  onToggleHide={onToggleHide}
-                  className="mt-6"
-                />
-              )}
+              <SidebarNavSection
+                title="Administración"
+                items={ADMIN_NAV_ITEMS.filter(roleFilter)}
+                branchId={branchId}
+                editMode={editMode}
+                hiddenNavItems={hiddenNavItems}
+                onToggleHide={onToggleHide}
+                className="mt-6"
+              />
 
-              {isAdmin && (
-                <SidebarNavSection
-                  title="Ajustes"
-                  items={SUPERADMIN_NAV_ITEMS}
-                  branchId={branchId}
-                  editMode={editMode}
-                  hiddenNavItems={hiddenNavItems}
-                  onToggleHide={onToggleHide}
-                  className="mt-6"
-                />
-              )}
+              <SidebarNavSection
+                title="Ajustes"
+                items={SUPERADMIN_NAV_ITEMS.filter(roleFilter)}
+                branchId={branchId}
+                editMode={editMode}
+                hiddenNavItems={hiddenNavItems}
+                onToggleHide={onToggleHide}
+                className="mt-6"
+              />
             </div>
           </aside>
         )}

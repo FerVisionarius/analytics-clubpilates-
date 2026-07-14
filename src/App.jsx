@@ -14,24 +14,24 @@ import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
 import Valoraciones from './components/Valoraciones'
-import AjustesFuncionalidades from './AjustesFuncionalidades'
+import Ajustes from './Ajustes'
 import Informes from './Informes'
 
 function SociosPage() {
   const { branchId } = useParams()
-  const { profile } = useAuth()
+  const { allowedNavItemIds } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => { if (profile?.role === 'manager') navigate(`/centro/${branchId}/home`) }, [profile, branchId])
-  if (profile?.role === 'manager') return null
+  useEffect(() => { if (!allowedNavItemIds.includes('miembros')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
+  if (!allowedNavItemIds.includes('miembros')) return null
   return <EstadisticasSocios branchId={branchId} />
 }
 
 function AjustesPage() {
-  const { isAdmin, isSuperAdmin } = useAuth()
+  const { isSuperAdmin, allowedNavItemIds } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => { if (!isAdmin) navigate('/') }, [isAdmin])
-  if (!isAdmin) return null
-  return <AjustesFuncionalidades readOnly={!isSuperAdmin} />
+  useEffect(() => { if (!allowedNavItemIds.includes('ajustes')) navigate('/') }, [allowedNavItemIds])
+  if (!allowedNavItemIds.includes('ajustes')) return null
+  return <Ajustes readOnly={!isSuperAdmin} />
 }
 
 function ProtectedRoute({ children }) {
@@ -175,26 +175,26 @@ function ValoracionesPage() {
 
 function OcupacionPromedioPage() {
   const { branchId } = useParams()
-  const { isAdmin } = useAuth()
+  const { allowedNavItemIds } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => { if (!isAdmin) navigate(`/centro/${branchId}/home`) }, [isAdmin, branchId])
-  if (!isAdmin) return null
+  useEffect(() => { if (!allowedNavItemIds.includes('ocupacion-promedio')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
+  if (!allowedNavItemIds.includes('ocupacion-promedio')) return null
   return <OcupacionPromedio branchId={branchId} />
 }
 
 function AdminUsuariosPage() {
-  const { isAdmin } = useAuth()
+  const { allowedNavItemIds } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => { if (!isAdmin) navigate('/') }, [isAdmin])
-  if (!isAdmin) return null
+  useEffect(() => { if (!allowedNavItemIds.includes('usuarios')) navigate('/') }, [allowedNavItemIds])
+  if (!allowedNavItemIds.includes('usuarios')) return null
   return <AdminUsuarios />
 }
 
 function InformesPage() {
-  const { isAdmin } = useAuth()
+  const { allowedNavItemIds } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => { if (!isAdmin) navigate('/') }, [isAdmin])
-  if (!isAdmin) return null
+  useEffect(() => { if (!allowedNavItemIds.includes('informes')) navigate('/') }, [allowedNavItemIds])
+  if (!allowedNavItemIds.includes('informes')) return null
   return <Informes />
 }
 

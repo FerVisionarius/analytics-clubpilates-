@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import { isAuthRecoveryRoute } from './lib/authRecovery'
+import { fetchAllowedNavItemIds } from './lib/permissions'
+import { ALL_NAV_ITEM_IDS } from './navConfig'
 
 const AuthContext = createContext(null)
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutos
@@ -9,6 +11,7 @@ const AUTH_INIT_TIMEOUT_MS = 8 * 1000
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [allowedNavItemIds, setAllowedNavItemIds] = useState(ALL_NAV_ITEM_IDS)
   const [loading, setLoading] = useState(true)
   const inactivityTimerRef = useRef(null)
 
@@ -16,6 +19,8 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.rpc('get_my_profile')
     if (!error && data) {
       setProfile(data)
+      const allowedIds = await fetchAllowedNavItemIds(supabase, data.role, ALL_NAV_ITEM_IDS)
+      setAllowedNavItemIds(allowedIds)
       if (data.status === 'pending') {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
         if (currentUser) {
@@ -69,6 +74,7 @@ export function AuthProvider({ children }) {
           fetchProfile()
         } else {
           setProfile(null)
+          setAllowedNavItemIds(ALL_NAV_ITEM_IDS)
           setLoading(false)
         }
       }, 0)
@@ -139,7 +145,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, hiddenNavItems, setNavItemHidden, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, hiddenNavItems, setNavItemHidden, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -102,6 +102,13 @@ export const SUPERADMIN_NAV_ITEMS = [
   )},
 ]
 
+export const ALL_NAV_ITEM_IDS = [
+  ...NAV_ITEMS.map(item => item.id),
+  ...ADVANCED_NAV_ITEMS.map(item => item.id),
+  ...ADMIN_NAV_ITEMS.map(item => item.id),
+  ...SUPERADMIN_NAV_ITEMS.map(item => item.id),
+]
+
 export const PAGE_TITLES = Object.fromEntries([
   ['home', 'Inicio'],
   ...NAV_ITEMS.map(item => [item.id, item.label]),
