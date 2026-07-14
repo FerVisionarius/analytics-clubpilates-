@@ -2,25 +2,11 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { useAuth } from './AuthContext'
 
-const CENTROS = [
-  { id: '60799c7835b8911c8545f043', name: 'Bonanova' },
-  { id: '68d68a5cf7176270040f624a', name: 'Carabanchel' },
-  { id: '61c07795f4492f7e61243062', name: 'Eixample' },
-  { id: '66deaf61cd10d28f140f5581', name: 'Entenza' },
-  { id: '6895fbb175b367c91101f96d', name: 'Goya' },
-  { id: '648060a55dbb5018470ba2c7', name: 'Guindalera' },
-  { id: '687a31ae3d5a8d28280c13b9', name: 'Imperial' },
-  { id: '654a426970c402fc1b0e9785', name: 'Pacífico' },
-  { id: '69008f1a0b1641b6a9017cac', name: 'Prosperidad' },
-  { id: '67f7a344297706f6bd0ebb76', name: 'Sagrada Familia' },
-  { id: '6583196c7e23ac73cf0547e4', name: 'Saint Gervasi' },
-]
-
-function Modal({ title, onClose, children }) {
+function Modal({ title, onClose, children, wide }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-text-100/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-bg-200 border border-bg-300 rounded-2xl w-full max-w-md shadow-2xl">
+      <div className={`relative bg-bg-200 border border-bg-300 rounded-2xl w-full shadow-2xl ${wide ? 'max-w-xl' : 'max-w-md'}`}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
           <h3 className="font-semibold text-text-100">{title}</h3>
           <button onClick={onClose} className="text-text-200 hover:text-text-100 transition-colors">
@@ -35,14 +21,14 @@ function Modal({ title, onClose, children }) {
   )
 }
 
-function CentrosSelector({ selected, onChange }) {
+function CentrosSelector({ centros, selected, onChange }) {
   function toggle(id) {
     if (selected.includes(id)) onChange(selected.filter(x => x !== id))
     else onChange([...selected, id])
   }
   return (
-    <div className="grid grid-cols-2 gap-2 mt-2">
-      {CENTROS.map(c => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 max-h-64 overflow-y-auto pr-1">
+      {centros.map(c => (
         <label key={c.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
           selected.includes(c.id)
             ? 'border-accent-100 bg-primary-100 text-text-100'
@@ -73,6 +59,7 @@ function CentrosSelector({ selected, onChange }) {
 export default function AdminUsuarios() {
   const { isSuperAdmin } = useAuth()
   const [usuarios, setUsuarios] = useState([])
+  const [centros, setCentros] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // 'invite' | 'edit' | 'delete'
   const [selected, setSelected] = useState(null)
@@ -87,7 +74,15 @@ export default function AdminUsuarios() {
   const [editRole, setEditRole] = useState('manager')
   const [editBranches, setEditBranches] = useState([])
 
-  useEffect(() => { fetchUsuarios() }, [])
+  useEffect(() => { fetchUsuarios(); fetchCentros() }, [])
+
+  async function fetchCentros() {
+    const { data } = await supabase
+      .from('branches')
+      .select('branch_id, name')
+      .order('name')
+    setCentros((data || []).map(b => ({ id: b.branch_id, name: b.name })))
+  }
 
   async function fetchUsuarios() {
     setLoading(true)
@@ -200,7 +195,7 @@ export default function AdminUsuarios() {
 
   function getCentroNames(ids) {
     if (!ids || ids.length === 0) return null
-    return ids.map(id => CENTROS.find(c => c.id === id)?.name || id)
+    return ids.map(id => centros.find(c => c.id === id)?.name || id)
   }
 
   function roleBadge(role) {
@@ -290,7 +285,7 @@ export default function AdminUsuarios() {
       )}
 
       {modal === 'invite' && (
-        <Modal title="Invitar nuevo usuario" onClose={() => setModal(null)}>
+        <Modal title="Invitar nuevo usuario" onClose={() => setModal(null)} wide>
           <form onSubmit={handleInvite} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-text-200 mb-1.5">Nombre completo</label>
@@ -329,7 +324,7 @@ export default function AdminUsuarios() {
             {inviteRole === 'manager' && (
               <div>
                 <label className="block text-sm font-medium text-text-200 mb-1.5">Centros asignados</label>
-                <CentrosSelector selected={inviteBranches} onChange={setInviteBranches} />
+                <CentrosSelector centros={centros} selected={inviteBranches} onChange={setInviteBranches} />
                 {inviteBranches.length === 0 && (
                   <p className="text-xs text-amber-400 mt-2">⚠ Selecciona al menos un centro</p>
                 )}
@@ -350,7 +345,7 @@ export default function AdminUsuarios() {
       )}
 
       {modal === 'edit' && selected && (
-        <Modal title={`Editar: ${selected.full_name || selected.email}`} onClose={() => setModal(null)}>
+        <Modal title={`Editar: ${selected.full_name || selected.email}`} onClose={() => setModal(null)} wide>
           <form onSubmit={handleEdit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-text-200 mb-1.5">Rol</label>
@@ -367,7 +362,7 @@ export default function AdminUsuarios() {
             {editRole === 'manager' && (
               <div>
                 <label className="block text-sm font-medium text-text-200 mb-1.5">Centros asignados</label>
-                <CentrosSelector selected={editBranches} onChange={setEditBranches} />
+                <CentrosSelector centros={centros} selected={editBranches} onChange={setEditBranches} />
                 {editBranches.length === 0 && (
                   <p className="text-xs text-amber-400 mt-2">⚠ Selecciona al menos un centro</p>
                 )}
