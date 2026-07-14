@@ -87,7 +87,7 @@ export default function Home() {
         <div>
           <h1 className="text-2xl font-bold text-text-100">¿Qué quieres consultar?</h1>
           <p className="text-text-200 text-sm mt-1">
-            {editMode ? 'Elegí qué tarjetas ocultar de tu vista. Los cambios se guardan al instante.' : 'Acceso directo a cada métrica del centro'}
+            {editMode ? 'Elige qué tarjetas ocultar de tu vista. Los cambios se guardan al instante.' : 'Acceso directo a cada métrica del centro'}
           </p>
         </div>
         <button

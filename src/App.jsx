@@ -14,6 +14,7 @@ import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
 import Valoraciones from './components/Valoraciones'
+import CRM from './components/CRM'
 import Ajustes from './Ajustes'
 import Informes from './Informes'
 
@@ -170,7 +171,7 @@ function CRMPage() {
   const navigate = useNavigate()
   useEffect(() => { if (!allowedNavItemIds.includes('crm')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
   if (!allowedNavItemIds.includes('crm')) return null
-  return <ComingSoon titulo="CRM" />
+  return <CRM branchId={branchId} />
 }
 
 function InstructoresPage() {

@@ -55,7 +55,7 @@ export default function AjustesPermisos() {
   return (
     <div>
       <p className="text-sm text-text-200 mb-4">
-        Elegí qué paneles puede ver cada rol. Los cambios se guardan al instante.
+        Elige qué paneles puede ver cada rol. Los cambios se guardan al instante.
       </p>
 
       <div className="flex gap-2 mb-6">
