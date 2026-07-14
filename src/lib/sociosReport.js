@@ -1,5 +1,17 @@
 import autoTable from 'jspdf-autotable'
 
+// Umbrales (% del total) a partir de los cuales una fila se resalta como alerta
+export const SOCIOS_ALERT_THRESHOLDS = {
+  '4 clases': 50,
+  'No recurrente': 4,
+  'Atrasados': 2,
+}
+
+export function isSociosAlert(label, pct) {
+  const threshold = SOCIOS_ALERT_THRESHOLDS[label]
+  return threshold !== undefined && pct > threshold
+}
+
 function clasificarTipoSuscripcion(membership_type, plan_name) {
   if (membership_type === 'payg') return 'Pago por clase'
   if (membership_type === 'num_classes') return 'Clases privadas'
@@ -152,6 +164,17 @@ export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tip
     ...(f.extra !== undefined ? [String(f.extra)] : [])
   ])
 
+  const alertCell = (filas, total) => (data) => {
+    if (data.column.index !== 2) return
+    const row = filas[data.row.index]
+    if (!row) return
+    const pct = total > 0 ? (row.cantidad / total) * 100 : 0
+    if (isSociosAlert(row.label, pct)) {
+      data.cell.styles.textColor = [220, 38, 38]
+      data.cell.styles.fontStyle = 'bold'
+    }
+  }
+
   const totalSuscripcion = totalCon(tipoSuscripcion)
   autoTable(doc, {
     startY: subtitleY + 10,
@@ -163,7 +186,8 @@ export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tip
     headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [225, 232, 240] },
     styles: { fontSize: 9, cellPadding: 4 },
-    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' } }
+    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' } },
+    didParseCell: alertCell(tipoSuscripcion, totalSuscripcion)
   })
 
   const totalEstado = totalCon(estadoSocios)
@@ -177,7 +201,8 @@ export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tip
     headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [225, 232, 240] },
     styles: { fontSize: 9, cellPadding: 4 },
-    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } }
+    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } },
+    didParseCell: alertCell(estadoSocios, totalEstado)
   })
 
   if (sinSuscripcion > 0) {
@@ -197,7 +222,8 @@ export function renderSociosPdfSection(doc, { tipoSuscripcion, estadoSocios, tip
     headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [225, 232, 240] },
     styles: { fontSize: 9, cellPadding: 4 },
-    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } }
+    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } },
+    didParseCell: alertCell(tipoSocio, totalSocio)
   })
 
   return doc.lastAutoTable.finalY

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import jsPDF from 'jspdf'
-import { fetchSociosStats, renderSociosPdfSection } from '../lib/sociosReport'
+import { fetchSociosStats, renderSociosPdfSection, isSociosAlert } from '../lib/sociosReport'
 
 function TablaEstadistica({ titulo, filas, columnas, nota }) {
   const total = filas.reduce((sum, f) => sum + f.cantidad, 0)
@@ -19,7 +19,10 @@ function TablaEstadistica({ titulo, filas, columnas, nota }) {
           </tr>
         </thead>
         <tbody>
-          {filas.map((f, i) => (
+          {filas.map((f, i) => {
+            const pct = total > 0 ? (f.cantidad / total) * 100 : null
+            const alert = pct !== null && isSociosAlert(f.label, pct)
+            return (
             <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
               <td className="px-6 py-3 text-text-100">
                 <div className="flex items-center gap-2">
@@ -37,12 +40,13 @@ function TablaEstadistica({ titulo, filas, columnas, nota }) {
                 </div>
               </td>
               <td className="px-6 py-3 text-text-100 font-medium">{f.cantidad.toLocaleString('es-ES')}</td>
-              <td className="px-6 py-3 text-text-200">{total > 0 ? ((f.cantidad / total) * 100).toFixed(2) + '%' : '—'}</td>
+              <td className={`px-6 py-3 ${alert ? 'font-bold text-red-600' : 'text-text-200'}`}>{pct !== null ? pct.toFixed(2) + '%' : '—'}</td>
               {f.extra !== undefined && (
                 <td className="px-6 py-3 text-text-200">{f.extra}</td>
               )}
             </tr>
-          ))}
+            )
+          })}
           <tr className="bg-primary-100/30">
             <td className="px-6 py-3 text-text-100 font-semibold">Total general</td>
             <td className="px-6 py-3 text-text-100 font-semibold">{total.toLocaleString('es-ES')}</td>
@@ -160,18 +164,11 @@ export default function EstadisticasSocios({ branchId }) {
         nota="Se recomienda mantener OVERDUE por debajo del 2%"
       />
 
-{sinSuscripcion > 0 && (
-        <div className="bg-bg-200 border border-bg-300 rounded-2xl px-6 py-4 flex items-center justify-between">
-          <span className="text-sm text-text-200">Socios sin suscripción activa (pago por clase / clases privadas)</span>
-          <span className="text-text-100 font-semibold">{sinSuscripcion.toLocaleString('es-ES')}</span>
-        </div>
-      )}
-
       <TablaEstadistica
         titulo="Tipo de Socio"
         columnas={['Tipo', 'Cantidad de socios', '% del total']}
         filas={tipoSocio}
-        nota="Se recomienda mantener No recurrente por debajo del 10%"
+        nota="Se recomienda mantener No recurrente por debajo del 4%"
       />
     </div>
   )
