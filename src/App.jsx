@@ -137,6 +137,7 @@ function AppRoutes() {
         <Route path="miembros" element={<SociosPage />} />
         <Route path="retencion" element={<ComingSoon titulo="Retención y Churn" />} />
         <Route path="laserr" element={<LaserrPage />} />
+        <Route path="crm" element={<CRMPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
         <Route path="informes" element={<InformesPage />} />
@@ -161,6 +162,15 @@ function OcupacionPage() {
 function LaserrPage() {
   const { branchId } = useParams()
   return <Laserr branchId={branchId} />
+}
+
+function CRMPage() {
+  const { branchId } = useParams()
+  const { allowedNavItemIds } = useAuth()
+  const navigate = useNavigate()
+  useEffect(() => { if (!allowedNavItemIds.includes('crm')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
+  if (!allowedNavItemIds.includes('crm')) return null
+  return <ComingSoon titulo="CRM" />
 }
 
 function InstructoresPage() {

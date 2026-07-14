@@ -146,6 +146,17 @@ export default function CentroLayout() {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
+            {allowedNavItemIds.includes('crm') && (
+              <Link
+                to={`/centro/${branchId}/crm`}
+                className="flex items-center gap-1.5 text-xs font-medium bg-accent-200 hover:bg-accent-100 text-white px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                CRM
+              </Link>
+            )}
             {isAdmin && (
               <span className="text-xs bg-primary-100 border border-primary-200 text-accent-200 px-2 py-0.5 rounded-full">
                 {isSuperAdmin ? 'SuperAdmin' : 'Admin'}
