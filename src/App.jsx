@@ -13,6 +13,7 @@ import ForgotPassword from './ForgotPassword'
 import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
+import Valoraciones from './components/Valoraciones'
 import AjustesFuncionalidades from './AjustesFuncionalidades'
 import Informes from './Informes'
 
@@ -132,6 +133,7 @@ function AppRoutes() {
         <Route path="home" element={<Home />} />
         <Route path="ocupacion" element={<OcupacionPage />} />
         <Route path="instructores" element={<InstructoresPage />} />
+        <Route path="valoraciones" element={<ValoracionesPage />} />
         <Route path="miembros" element={<SociosPage />} />
         <Route path="retencion" element={<ComingSoon titulo="Retención y Churn" />} />
         <Route path="laserr" element={<LaserrPage />} />
@@ -164,6 +166,11 @@ function LaserrPage() {
 function InstructoresPage() {
   const { branchId } = useParams()
   return <Instructores branchId={branchId} />
+}
+
+function ValoracionesPage() {
+  const { branchId } = useParams()
+  return <Valoraciones branchId={branchId} />
 }
 
 function OcupacionPromedioPage() {

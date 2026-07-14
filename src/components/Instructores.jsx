@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchEventRatings, fetchEventResponses } from '../lib/ratings'
 
 function formatDateTime(iso) {
   if (!iso) return '—'
@@ -37,84 +38,30 @@ export default function Instructores({ branchId }) {
     const uniqueStaff = [...new Map((staff || []).map(s => [s.glofox_user_id, s])).values()]
     const staffMap = {}
     uniqueStaff.forEach(s => { staffMap[s.glofox_user_id] = s.name })
-  
-    // Paso 1: sacar primero los event_id que tienen respuestas (tabla pequeña)
-    const { data: responses } = await supabase
-      .from('class_survey_responses')
-      .select('event_id')
-  
-    const candidateEventIds = [...new Set((responses || []).map(r => r.event_id))]
-  
-    if (candidateEventIds.length === 0) {
+
+    const eventRatings = await fetchEventRatings(supabase, branchId)
+    if (eventRatings.length === 0) {
       setRanking([])
       setEventsByTrainer({})
       setLoading(false)
       return
     }
-  
-    // Paso 2: cruzar SOLO esos event_id contra classes, filtrado por centro
-    const { data: classes } = await supabase
-      .from('classes')
-      .select('event_id, trainer_id, name, scheduled_at')
-      .eq('branch_id', branchId)
-      .in('event_id', candidateEventIds)
-      .order('scheduled_at', { ascending: false })
-  
-    const eventInfo = {}
-    ;(classes || []).forEach(c => {
-      if (!eventInfo[c.event_id]) {
-        eventInfo[c.event_id] = {
-          trainerId: c.trainer_id,
-          name: c.name,
-          lastScheduledAt: c.scheduled_at,
-        }
-      }
-    })
-  
-    const eventIds = Object.keys(eventInfo)
-    if (eventIds.length === 0) {
-      setRanking([])
-      setEventsByTrainer({})
-      setLoading(false)
-      return
-    }
-  
-    const { data: answers } = await supabase
-      .from('class_survey_answers')
-      .select('answer_numeric, response_id, class_survey_responses!inner(event_id)')
-      .eq('answer_type', 'numeric')
-      .in('class_survey_responses.event_id', eventIds)
-  
-    const perEvent = {}
-    ;(answers || []).forEach(a => {
-      const eid = a.class_survey_responses.event_id
-      if (!perEvent[eid]) perEvent[eid] = { sum: 0, count: 0 }
-      perEvent[eid].sum += a.answer_numeric
-      perEvent[eid].count += 1
-    })
-  
+
     const perTrainer = {}
     const trainerEvents = {}
-  
-    Object.entries(perEvent).forEach(([eid, stats]) => {
-      const info = eventInfo[eid]
-      if (!info || !info.trainerId) return
-  
-      const tid = info.trainerId
+
+    eventRatings.forEach(ev => {
+      if (!ev.trainerId) return
+
+      const tid = ev.trainerId
       if (!perTrainer[tid]) perTrainer[tid] = { sum: 0, count: 0 }
-      perTrainer[tid].sum += stats.sum
-      perTrainer[tid].count += stats.count
-  
+      perTrainer[tid].sum += ev.avg * ev.count
+      perTrainer[tid].count += ev.count
+
       if (!trainerEvents[tid]) trainerEvents[tid] = []
-      trainerEvents[tid].push({
-        eventId: eid,
-        name: info.name,
-        lastScheduledAt: info.lastScheduledAt,
-        avg: stats.sum / stats.count,
-        count: stats.count,
-      })
+      trainerEvents[tid].push(ev)
     })
-  
+
     const rankingList = Object.entries(perTrainer)
       .map(([tid, stats]) => ({
         trainerId: tid,
@@ -132,14 +79,8 @@ export default function Instructores({ branchId }) {
 
   async function openEventModal(ev) {
     setEventModal({ ev, responses: [], loading: true })
-
-    const { data: responses } = await supabase
-      .from('class_survey_responses')
-      .select('id, user_id, submitted_at, class_survey_answers(question_key, question_label, answer_type, answer_numeric, answer_text)')
-      .eq('event_id', ev.eventId)
-      .order('submitted_at', { ascending: false })
-
-    setEventModal({ ev, responses: responses || [], loading: false })
+    const responses = await fetchEventResponses(supabase, ev.eventId)
+    setEventModal({ ev, responses, loading: false })
   }
 
   const maxAvg = ranking.length > 0 ? Math.max(...ranking.map(r => r.avg), 1) : 1
