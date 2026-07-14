@@ -168,7 +168,7 @@ export default function EstadisticasSocios({ branchId }) {
         titulo="Tipo de Socio"
         columnas={['Tipo', 'Cantidad de socios', '% del total']}
         filas={tipoSocio}
-        nota="Se recomienda mantener No recurrente por debajo del 4%"
+        nota="Se recomienda mantener No recurrente por debajo del 10%"
       />
     </div>
   )

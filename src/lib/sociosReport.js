@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable'
 // Umbrales (% del total) a partir de los cuales una fila se resalta como alerta
 export const SOCIOS_ALERT_THRESHOLDS = {
   '4 clases': 50,
-  'No recurrente': 4,
+  'No recurrente': 10,
   'Atrasados': 2,
 }
 
