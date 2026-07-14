@@ -12,22 +12,72 @@ const navLinkClass = ({ isActive }) =>
       : 'text-text-200 hover:text-text-100 hover:bg-primary-100/60'
   }`
 
+function SidebarNavItem({ item, branchId, editMode, hidden, onToggleHide }) {
+  if (!editMode) {
+    return (
+      <NavLink to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
+        {item.sidebarIcon}
+        {item.label}
+      </NavLink>
+    )
+  }
+  return (
+    <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm ${
+      hidden ? 'text-primary-300 opacity-60' : 'text-text-200'
+    }`}>
+      <span className="flex items-center gap-2.5 truncate">
+        {item.sidebarIcon}
+        {item.label}
+      </span>
+      <button
+        onClick={() => onToggleHide(item.id)}
+        title={hidden ? 'Mostrar en el menú' : 'Ocultar del menú'}
+        className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs leading-none transition-colors ${
+          hidden ? 'bg-accent-200 text-white hover:bg-accent-100' : 'bg-primary-100 text-text-200 hover:bg-red-100 hover:text-red-600'
+        }`}
+      >
+        {hidden ? '+' : '✕'}
+      </button>
+    </div>
+  )
+}
+
+function SidebarNavSection({ title, items, branchId, editMode, hiddenNavItems, onToggleHide, className = '' }) {
+  const visible = editMode ? items : items.filter(item => !hiddenNavItems.includes(item.id))
+  if (visible.length === 0) return null
+
+  return (
+    <div className={className}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">{title}</p>
+      <nav className="space-y-0.5">
+        {visible.map(item => (
+          <SidebarNavItem
+            key={item.id}
+            item={item}
+            branchId={branchId}
+            editMode={editMode}
+            hidden={hiddenNavItems.includes(item.id)}
+            onToggleHide={onToggleHide}
+          />
+        ))}
+      </nav>
+    </div>
+  )
+}
+
 export default function CentroLayout() {
   const { branchId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, hiddenNavItems, signOut } = useAuth()
+  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, hiddenNavItems, setNavItemHidden, signOut } = useAuth()
   const [branch, setBranch] = useState(null)
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [editMode, setEditMode] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
-  const visibleNavItems = NAV_ITEMS.filter(item =>
-    (item.id !== 'miembros' || profile?.role !== 'manager') && !hiddenNavItems.includes(item.id)
-  )
-  const visibleAdvancedNavItems = ADVANCED_NAV_ITEMS.filter(item => !hiddenNavItems.includes(item.id))
-  const visibleAdminNavItems = ADMIN_NAV_ITEMS.filter(item => !hiddenNavItems.includes(item.id))
-  const visibleSuperadminNavItems = SUPERADMIN_NAV_ITEMS.filter(item => !hiddenNavItems.includes(item.id))
+  const roleFilteredNavItems = NAV_ITEMS.filter(item => item.id !== 'miembros' || profile?.role !== 'manager')
+  const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
 
   useEffect(() => {
     fetchBranches()
@@ -122,16 +172,34 @@ export default function CentroLayout() {
             <div className="w-52 h-full overflow-y-auto py-6 px-3">
               <div className="flex items-center justify-between px-3 mb-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary-300">Menú</p>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="text-primary-300 hover:text-text-100 p-1 rounded hover:bg-primary-100/60 transition-colors"
-                  title="Ocultar menú"
-                  aria-label="Ocultar menú"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditMode(!editMode)}
+                    className={`p-1 rounded hover:bg-primary-100/60 transition-colors ${editMode ? 'text-accent-200' : 'text-primary-300 hover:text-text-100'}`}
+                    title={editMode ? 'Terminar de personalizar' : 'Personalizar menú'}
+                    aria-label={editMode ? 'Terminar de personalizar' : 'Personalizar menú'}
+                  >
+                    {editMode ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a4 4 0 01-1.414.94l-3.001 1.06 1.06-3.001a4 4 0 01.94-1.414z" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="text-primary-300 hover:text-text-100 p-1 rounded hover:bg-primary-100/60 transition-colors"
+                    title="Ocultar menú"
+                    aria-label="Ocultar menú"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <nav className="space-y-0.5 mb-4">
@@ -143,56 +211,49 @@ export default function CentroLayout() {
                 </NavLink>
               </nav>
 
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas</p>
-              <nav className="space-y-0.5">
-                {visibleNavItems.map(item => (
-                  <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
-                    {item.sidebarIcon}
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
+              <SidebarNavSection
+                title="Métricas"
+                items={roleFilteredNavItems}
+                branchId={branchId}
+                editMode={editMode}
+                hiddenNavItems={hiddenNavItems}
+                onToggleHide={onToggleHide}
+              />
 
-              {isAdmin && visibleAdvancedNavItems.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Métricas Avanzadas</p>
-                  <nav className="space-y-0.5">
-                    {visibleAdvancedNavItems.map(item => (
-                      <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
-                        {item.sidebarIcon}
-                        {item.label}
-                      </NavLink>
-                    ))}
-                  </nav>
-                </div>
+              {isAdmin && (
+                <SidebarNavSection
+                  title="Métricas Avanzadas"
+                  items={ADVANCED_NAV_ITEMS}
+                  branchId={branchId}
+                  editMode={editMode}
+                  hiddenNavItems={hiddenNavItems}
+                  onToggleHide={onToggleHide}
+                  className="mt-6"
+                />
               )}
 
-              {isAdmin && visibleAdminNavItems.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Administración</p>
-                  <nav className="space-y-0.5">
-                    {visibleAdminNavItems.map(item => (
-                      <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
-                        {item.sidebarIcon}
-                        {item.label}
-                      </NavLink>
-                    ))}
-                  </nav>
-                </div>
+              {isAdmin && (
+                <SidebarNavSection
+                  title="Administración"
+                  items={ADMIN_NAV_ITEMS}
+                  branchId={branchId}
+                  editMode={editMode}
+                  hiddenNavItems={hiddenNavItems}
+                  onToggleHide={onToggleHide}
+                  className="mt-6"
+                />
               )}
 
-              {isAdmin && visibleSuperadminNavItems.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-300 px-3 mb-3">Ajustes</p>
-                  <nav className="space-y-0.5">
-                    {visibleSuperadminNavItems.map(item => (
-                      <NavLink key={item.id} to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
-                        {item.sidebarIcon}
-                        {item.label}
-                      </NavLink>
-                    ))}
-                  </nav>
-                </div>
+              {isAdmin && (
+                <SidebarNavSection
+                  title="Ajustes"
+                  items={SUPERADMIN_NAV_ITEMS}
+                  branchId={branchId}
+                  editMode={editMode}
+                  hiddenNavItems={hiddenNavItems}
+                  onToggleHide={onToggleHide}
+                  className="mt-6"
+                />
               )}
             </div>
           </aside>
