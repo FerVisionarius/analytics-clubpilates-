@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import { supabase } from './lib/supabase'
 import logo from './assets/logo-clubpilates.png'
 import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle } from './navConfig'
+import CRMLaunchOverlay from './crm/CRMLaunchOverlay'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -74,10 +75,24 @@ export default function CentroLayout() {
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [editMode, setEditMode] = useState(false)
+  const [launchingCRM, setLaunchingCRM] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
+  const isCRM = location.pathname.includes('/crm')
   const roleFilter = item => allowedNavItemIds.includes(item.id)
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
+
+  function openCRM() {
+    if (isCRM) {
+      navigate(`/centro/${branchId}/crm`)
+      return
+    }
+    setLaunchingCRM(true)
+    setTimeout(() => {
+      navigate(`/centro/${branchId}/crm`)
+      setLaunchingCRM(false)
+    }, 650)
+  }
 
   useEffect(() => {
     fetchBranches()
@@ -147,15 +162,15 @@ export default function CentroLayout() {
 
           <div className="flex items-center gap-3 shrink-0">
             {allowedNavItemIds.includes('crm') && (
-              <Link
-                to={`/centro/${branchId}/crm`}
+              <button
+                onClick={openCRM}
                 className="flex items-center gap-1.5 text-xs font-medium bg-accent-200 hover:bg-accent-100 text-white px-3 py-1.5 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
                 CRM
-              </Link>
+              </button>
             )}
             {isAdmin && (
               <span className="text-xs bg-primary-100 border border-primary-200 text-accent-200 px-2 py-0.5 rounded-full">
@@ -174,7 +189,7 @@ export default function CentroLayout() {
       </header>
 
       <div className="flex flex-1 w-full min-h-0 relative">
-        {!isHome && (
+        {!isHome && !isCRM && (
           <aside
             className={`shrink-0 sticky top-25 self-start h-[calc(100vh-6.25rem)] overflow-hidden border-r border-bg-300 bg-bg-200 transition-[width,opacity] duration-500 ease-in-out ${
               sidebarOpen ? 'w-52 opacity-100' : 'w-0 opacity-0 border-r-0'
@@ -264,7 +279,7 @@ export default function CentroLayout() {
           </aside>
         )}
 
-        {!isHome && !sidebarOpen && (
+        {!isHome && !isCRM && !sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
             className="fixed left-0 top-1/2 -translate-y-1/2 z-20 bg-bg-200 border border-bg-300 border-l-0 rounded-r-lg px-1.5 py-3 text-primary-300 hover:text-accent-200 hover:bg-primary-100/60 transition-all duration-300 shadow-sm"
@@ -278,13 +293,17 @@ export default function CentroLayout() {
         )}
 
         <main
-          className={`flex-1 py-8 px-6 sm:px-8 min-w-0 bg-bg-100 transition-all duration-500 ease-in-out ${
+          className={`flex-1 min-w-0 bg-bg-100 transition-all duration-500 ease-in-out ${
+            isCRM ? '' : 'py-8 px-6 sm:px-8'
+          } ${
             isHome || !sidebarOpen ? 'max-w-6xl mx-auto w-full' : ''
           }`}
         >
           <Outlet />
         </main>
       </div>
+
+      {launchingCRM && <CRMLaunchOverlay />}
     </div>
   )
 }

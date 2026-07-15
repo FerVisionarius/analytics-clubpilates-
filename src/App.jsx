@@ -14,9 +14,14 @@ import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
 import Valoraciones from './components/Valoraciones'
-import CRM from './components/CRM'
 import Ajustes from './Ajustes'
 import Informes from './Informes'
+import CRMShell from './crm/CRMShell'
+import CRMHome from './crm/CRMHome'
+import CRMContactos from './crm/CRMContactos'
+import CRMHistoricoLlamadas from './crm/CRMHistoricoLlamadas'
+import CRMChat from './crm/CRMChat'
+import CRMChatConversation from './crm/CRMChatConversation'
 
 function SociosPage() {
   const { branchId } = useParams()
@@ -138,7 +143,13 @@ function AppRoutes() {
         <Route path="miembros" element={<SociosPage />} />
         <Route path="retencion" element={<ComingSoon titulo="Retención y Churn" />} />
         <Route path="laserr" element={<LaserrPage />} />
-        <Route path="crm" element={<CRMPage />} />
+        <Route path="crm" element={<CRMPage />}>
+          <Route index element={<CRMHome />} />
+          <Route path="contactos" element={<CRMContactos />} />
+          <Route path="llamadas" element={<CRMHistoricoLlamadas />} />
+          <Route path="chat" element={<CRMChat />} />
+          <Route path="chat/:contactId" element={<CRMChatConversation />} />
+        </Route>
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
         <Route path="informes" element={<InformesPage />} />
@@ -171,7 +182,7 @@ function CRMPage() {
   const navigate = useNavigate()
   useEffect(() => { if (!allowedNavItemIds.includes('crm')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
   if (!allowedNavItemIds.includes('crm')) return null
-  return <CRM branchId={branchId} />
+  return <CRMShell />
 }
 
 function InstructoresPage() {
