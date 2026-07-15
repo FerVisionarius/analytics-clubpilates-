@@ -17,20 +17,29 @@ import Valoraciones from './components/Valoraciones'
 import Ajustes from './Ajustes'
 import Informes from './Informes'
 
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center text-center gap-2 py-24 px-4">
+      <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center mb-2">
+        <svg className="w-6 h-6 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <p className="text-text-100 font-medium">Tu perfil no tiene los permisos necesarios para acceder a esta herramienta.</p>
+    </div>
+  )
+}
+
 function SociosPage() {
   const { branchId } = useParams()
   const { allowedNavItemIds } = useAuth()
-  const navigate = useNavigate()
-  useEffect(() => { if (!allowedNavItemIds.includes('miembros')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
-  if (!allowedNavItemIds.includes('miembros')) return null
+  if (!allowedNavItemIds.includes('miembros')) return <AccessDenied />
   return <EstadisticasSocios branchId={branchId} />
 }
 
 function AjustesPage() {
   const { isSuperAdmin, allowedNavItemIds } = useAuth()
-  const navigate = useNavigate()
-  useEffect(() => { if (!allowedNavItemIds.includes('ajustes')) navigate('/') }, [allowedNavItemIds])
-  if (!allowedNavItemIds.includes('ajustes')) return null
+  if (!allowedNavItemIds.includes('ajustes')) return <AccessDenied />
   return <Ajustes readOnly={!isSuperAdmin} />
 }
 
@@ -176,25 +185,19 @@ function ValoracionesPage() {
 function OcupacionPromedioPage() {
   const { branchId } = useParams()
   const { allowedNavItemIds } = useAuth()
-  const navigate = useNavigate()
-  useEffect(() => { if (!allowedNavItemIds.includes('ocupacion-promedio')) navigate(`/centro/${branchId}/home`) }, [allowedNavItemIds, branchId])
-  if (!allowedNavItemIds.includes('ocupacion-promedio')) return null
+  if (!allowedNavItemIds.includes('ocupacion-promedio')) return <AccessDenied />
   return <OcupacionPromedio branchId={branchId} />
 }
 
 function AdminUsuariosPage() {
   const { allowedNavItemIds } = useAuth()
-  const navigate = useNavigate()
-  useEffect(() => { if (!allowedNavItemIds.includes('usuarios')) navigate('/') }, [allowedNavItemIds])
-  if (!allowedNavItemIds.includes('usuarios')) return null
+  if (!allowedNavItemIds.includes('usuarios')) return <AccessDenied />
   return <AdminUsuarios />
 }
 
 function InformesPage() {
   const { allowedNavItemIds } = useAuth()
-  const navigate = useNavigate()
-  useEffect(() => { if (!allowedNavItemIds.includes('informes')) navigate('/') }, [allowedNavItemIds])
-  if (!allowedNavItemIds.includes('informes')) return null
+  if (!allowedNavItemIds.includes('informes')) return <AccessDenied />
   return <Informes />
 }
 
