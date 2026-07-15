@@ -3,8 +3,8 @@ import { useParams, useNavigate, NavLink, Outlet, useLocation, Link } from 'reac
 import { useAuth } from './AuthContext'
 import { supabase } from './lib/supabase'
 import logo from './assets/logo-clubpilates.png'
-import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle } from './navConfig'
-import CRMLaunchOverlay from './crm/CRMLaunchOverlay'
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle, CRM_APP_URL } from './navConfig'
+import CRMLaunchOverlay from './CRMLaunchOverlay'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -15,6 +15,14 @@ const navLinkClass = ({ isActive }) =>
 
 function SidebarNavItem({ item, branchId, editMode, hidden, onToggleHide }) {
   if (!editMode) {
+    if (item.external) {
+      return (
+        <a href={`${CRM_APP_URL}/${branchId}`} className={navLinkClass({ isActive: false })}>
+          {item.sidebarIcon}
+          {item.label}
+        </a>
+      )
+    }
     return (
       <NavLink to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
         {item.sidebarIcon}
@@ -78,19 +86,13 @@ export default function CentroLayout() {
   const [launchingCRM, setLaunchingCRM] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
-  const isCRM = location.pathname.includes('/crm')
   const roleFilter = item => allowedNavItemIds.includes(item.id)
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
 
   function openCRM() {
-    if (isCRM) {
-      navigate(`/centro/${branchId}/crm`)
-      return
-    }
     setLaunchingCRM(true)
     setTimeout(() => {
-      navigate(`/centro/${branchId}/crm`)
-      setLaunchingCRM(false)
+      window.location.href = `${CRM_APP_URL}/${branchId}`
     }, 650)
   }
 
@@ -189,7 +191,7 @@ export default function CentroLayout() {
       </header>
 
       <div className="flex flex-1 w-full min-h-0 relative">
-        {!isHome && !isCRM && (
+        {!isHome && (
           <aside
             className={`shrink-0 sticky top-25 self-start h-[calc(100vh-6.25rem)] overflow-hidden border-r border-bg-300 bg-bg-200 transition-[width,opacity] duration-500 ease-in-out ${
               sidebarOpen ? 'w-52 opacity-100' : 'w-0 opacity-0 border-r-0'
@@ -279,7 +281,7 @@ export default function CentroLayout() {
           </aside>
         )}
 
-        {!isHome && !isCRM && !sidebarOpen && (
+        {!isHome && !sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
             className="fixed left-0 top-1/2 -translate-y-1/2 z-20 bg-bg-200 border border-bg-300 border-l-0 rounded-r-lg px-1.5 py-3 text-primary-300 hover:text-accent-200 hover:bg-primary-100/60 transition-all duration-300 shadow-sm"
@@ -293,9 +295,7 @@ export default function CentroLayout() {
         )}
 
         <main
-          className={`flex-1 min-w-0 bg-bg-100 transition-all duration-500 ease-in-out ${
-            isCRM ? '' : 'py-8 px-6 sm:px-8'
-          } ${
+          className={`flex-1 py-8 px-6 sm:px-8 min-w-0 bg-bg-100 transition-all duration-500 ease-in-out ${
             isHome || !sidebarOpen ? 'max-w-6xl mx-auto w-full' : ''
           }`}
         >

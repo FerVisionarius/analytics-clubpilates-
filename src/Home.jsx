@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from './AuthContext'
-import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS } from './navConfig'
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, CRM_APP_URL } from './navConfig'
 
-function HomeCard({ to, icon, label, desc, editMode, hidden, onToggleHide }) {
+function HomeCard({ to, external, icon, label, desc, editMode, hidden, onToggleHide }) {
   const content = (
     <>
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
@@ -37,6 +37,17 @@ function HomeCard({ to, icon, label, desc, editMode, hidden, onToggleHide }) {
     )
   }
 
+  if (external) {
+    return (
+      <a
+        href={to}
+        className="group bg-bg-200 border border-bg-300 rounded-2xl p-6 flex flex-col gap-3 hover:border-accent-100 hover:shadow-md transition-all"
+      >
+        {content}
+      </a>
+    )
+  }
+
   return (
     <Link
       to={to}
@@ -47,7 +58,7 @@ function HomeCard({ to, icon, label, desc, editMode, hidden, onToggleHide }) {
   )
 }
 
-function HomeSection({ title, items, base, editMode, hiddenNavItems, setNavItemHidden }) {
+function HomeSection({ title, items, base, branchId, editMode, hiddenNavItems, setNavItemHidden }) {
   const visible = editMode ? items : items.filter(item => !hiddenNavItems.includes(item.id))
   if (visible.length === 0) return null
 
@@ -58,7 +69,8 @@ function HomeSection({ title, items, base, editMode, hiddenNavItems, setNavItemH
         {visible.map(item => (
           <HomeCard
             key={item.id}
-            to={`${base}/${item.id}`}
+            to={item.external ? `${CRM_APP_URL}/${branchId}` : `${base}/${item.id}`}
+            external={item.external}
             icon={item.icon}
             label={item.label}
             desc={item.desc}
@@ -79,7 +91,7 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false)
 
   const roleFilter = item => allowedNavItemIds.includes(item.id)
-  const sectionProps = { base, editMode, hiddenNavItems, setNavItemHidden }
+  const sectionProps = { base, branchId, editMode, hiddenNavItems, setNavItemHidden }
 
   return (
     <div className="max-w-4xl mx-auto">
