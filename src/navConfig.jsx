@@ -1,5 +1,3 @@
-export const CRM_APP_URL = 'https://crm.clubpilatesia.es'
-
 export const NAV_ITEMS = [
   { id: 'ocupacion', label: 'Ocupación', desc: 'Calendario y ocupación de clases', icon: (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -55,15 +53,13 @@ export const NAV_ITEMS = [
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   )},
-  { id: 'crm', label: 'CRM', desc: 'Gestión de relación con clientes', external: true, icon: (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-    </svg>
-  ), sidebarIcon: (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-    </svg>
-  )},
+]
+
+// Herramientas que viven fuera de este dashboard (apps separadas).
+// No se renderizan como tarjeta/menu aca; solo existen para que
+// Ajustes > Permisos pueda controlar el acceso por rol.
+export const EXTERNAL_TOOL_ITEMS = [
+  { id: 'crm', label: 'CRM', desc: 'Gestión de relación con clientes (app separada)' },
 ]
 
 export const ADMIN_NAV_ITEMS = [

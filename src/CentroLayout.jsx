@@ -3,8 +3,7 @@ import { useParams, useNavigate, NavLink, Outlet, useLocation, Link } from 'reac
 import { useAuth } from './AuthContext'
 import { supabase } from './lib/supabase'
 import logo from './assets/logo-clubpilates.png'
-import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle, CRM_APP_URL } from './navConfig'
-import CRMLaunchOverlay from './CRMLaunchOverlay'
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle } from './navConfig'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -15,14 +14,6 @@ const navLinkClass = ({ isActive }) =>
 
 function SidebarNavItem({ item, branchId, editMode, hidden, onToggleHide }) {
   if (!editMode) {
-    if (item.external) {
-      return (
-        <a href={`${CRM_APP_URL}/${branchId}`} className={navLinkClass({ isActive: false })}>
-          {item.sidebarIcon}
-          {item.label}
-        </a>
-      )
-    }
     return (
       <NavLink to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
         {item.sidebarIcon}
@@ -83,18 +74,10 @@ export default function CentroLayout() {
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [editMode, setEditMode] = useState(false)
-  const [launchingCRM, setLaunchingCRM] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
   const roleFilter = item => allowedNavItemIds.includes(item.id)
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
-
-  function openCRM() {
-    setLaunchingCRM(true)
-    setTimeout(() => {
-      window.location.href = `${CRM_APP_URL}/${branchId}`
-    }, 650)
-  }
 
   useEffect(() => {
     fetchBranches()
@@ -163,17 +146,6 @@ export default function CentroLayout() {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {allowedNavItemIds.includes('crm') && (
-              <button
-                onClick={openCRM}
-                className="flex items-center gap-1.5 text-xs font-medium bg-accent-200 hover:bg-accent-100 text-white px-3 py-1.5 rounded-lg transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                CRM
-              </button>
-            )}
             {isAdmin && (
               <span className="text-xs bg-primary-100 border border-primary-200 text-accent-200 px-2 py-0.5 rounded-full">
                 {isSuperAdmin ? 'SuperAdmin' : 'Admin'}
@@ -302,8 +274,6 @@ export default function CentroLayout() {
           <Outlet />
         </main>
       </div>
-
-      {launchingCRM && <CRMLaunchOverlay />}
     </div>
   )
 }

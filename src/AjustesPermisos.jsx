@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { fetchAllRolePermissions, upsertRolePermission } from './lib/permissions'
-import { NAV_ITEMS, ADVANCED_NAV_ITEMS, ADMIN_NAV_ITEMS, SUPERADMIN_NAV_ITEMS } from './navConfig'
+import { NAV_ITEMS, ADVANCED_NAV_ITEMS, ADMIN_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, EXTERNAL_TOOL_ITEMS } from './navConfig'
 
 const ROLES = [
   { key: 'manager', label: 'Manager' },
@@ -14,6 +14,7 @@ const SECTIONS = [
   { label: 'Métricas Avanzadas', items: ADVANCED_NAV_ITEMS },
   { label: 'Administración', items: ADMIN_NAV_ITEMS },
   { label: 'Ajustes', items: SUPERADMIN_NAV_ITEMS },
+  { label: 'Herramientas externas', items: EXTERNAL_TOOL_ITEMS },
 ]
 
 export default function AjustesPermisos() {
