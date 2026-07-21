@@ -32,7 +32,7 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') throw new Error('Solo admins pueden invitar usuarios')
+    if (profile?.role !== 'admin' && profile?.role !== 'superadmin') throw new Error('Solo admins pueden invitar usuarios')
 
     const { email, full_name, role, branch_ids, redirectTo } = await req.json()
 
