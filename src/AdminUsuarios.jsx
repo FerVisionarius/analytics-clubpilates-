@@ -27,7 +27,7 @@ function CentrosSelector({ centros, selected, onChange }) {
     else onChange([...selected, id])
   }
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 max-h-64 overflow-y-auto pr-1">
+    <div className="flex flex-col gap-2 mt-2 max-h-64 overflow-y-auto pr-1">
       {centros.map(c => (
         <label key={c.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
           selected.includes(c.id)
@@ -49,7 +49,7 @@ function CentrosSelector({ centros, selected, onChange }) {
               </svg>
             )}
           </span>
-          <span className="text-sm truncate">{c.name}</span>
+          <span className="text-sm">{c.name}</span>
         </label>
       ))}
     </div>
