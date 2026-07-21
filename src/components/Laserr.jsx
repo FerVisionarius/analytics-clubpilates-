@@ -7,7 +7,7 @@ const today = new Date()
 const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
 const todayStr = today.toISOString().split('T')[0]
 
-const STEP_COLORS = ['bg-accent-100', 'bg-accent-200', 'bg-red-400', 'bg-primary-200', 'bg-orange-400', 'bg-green-500', 'bg-emerald-400', 'bg-red-500', 'bg-amber-500']
+const STEP_COLORS = ['bg-accent-100', 'bg-accent-200', 'bg-primary-200', 'bg-green-500', 'bg-emerald-400', 'bg-red-500', 'bg-orange-400', 'bg-red-400', 'bg-amber-500']
 
 const membershipLabel = (type) => {
   if (type === 'time_classes') return 'Suscripción recurrente'
@@ -99,7 +99,7 @@ export default function Laserr({ branchId }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-text-100">Laserr</h2>
+          <h2 className="text-xl font-bold text-text-100">LASERR</h2>
           <p className="text-text-200 text-sm mt-0.5">Funnel de conversión de leads</p>
         </div>
       </div>
@@ -154,7 +154,9 @@ export default function Laserr({ branchId }) {
             <div
               key={i}
               onClick={() => step.list?.length > 0 && setModal({ title: step.label, people: step.list })}
-              className={`bg-bg-200 border border-bg-300 rounded-xl p-4 ${step.list?.length > 0 ? 'cursor-pointer hover:border-primary-200 transition-colors' : ''}`}
+              className={`bg-bg-200 border rounded-xl p-4 ${step.list?.length > 0 ? 'cursor-pointer hover:border-primary-200 transition-colors' : ''} ${
+                step.indent ? 'ml-8 border-l-4 border-l-accent-100 border-y-bg-300 border-r-bg-300' : 'border-bg-300'
+              }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div>

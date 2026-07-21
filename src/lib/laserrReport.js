@@ -191,12 +191,12 @@ export function buildLaserrSteps(stats) {
   return [
     { label: 'Leads totales', value: stats.leads, pct: null, desc: 'Nuevos leads en el período', list: stats.leadsList },
     { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
-    { label: 'Cancelados', value: stats.cancelados, pct: pct(stats.cancelados, stats.apuntados), desc: 'Cancelaron la reserva de intro', list: stats.canceladosList },
     { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), desc: 'Asistieron a la clase', list: stats.asistidosList },
+    { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList, indent: true },
+    { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), desc: 'Membresía en días posteriores', list: stats.compraronDespuesList, indent: true },
+    { label: 'No compraron', value: stats.noCompraron, pct: pct(stats.noCompraron, stats.asistidos), desc: 'Asistieron pero no compraron membresía', list: stats.noCompraronList, indent: true },
     { label: 'No asistieron', value: stats.noAsistieron, pct: pct(stats.noAsistieron, stats.apuntados), desc: 'No asistieron ni cancelaron', list: stats.noAsistieronList },
-    { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList },
-    { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), desc: 'Membresía en días posteriores', list: stats.compraronDespuesList },
-    { label: 'No compraron', value: stats.noCompraron, pct: pct(stats.noCompraron, stats.asistidos), desc: 'Asistieron pero no compraron membresía', list: stats.noCompraronList },
+    { label: 'Cancelados', value: stats.cancelados, pct: pct(stats.cancelados, stats.apuntados), desc: 'Cancelaron la reserva de intro', list: stats.canceladosList },
     { label: 'Nuevos miembros sin intro', value: stats.sinIntro, pct: pct(stats.sinIntro, stats.leads), desc: 'Compraron directamente sin pasar por clase intro', list: stats.sinIntroList },
   ]
 }
@@ -207,7 +207,7 @@ export function renderLaserrPdfSection(doc, { stats, dateFrom, dateTo, branchNam
 
   doc.setFontSize(18)
   doc.setTextColor(30, 30, 30)
-  doc.text('Laserr - Funnel de conversión', pageWidth / 2, startY, { align: 'center' })
+  doc.text('LASERR - Funnel de conversión', pageWidth / 2, startY, { align: 'center' })
 
   let subtitleY = startY + 8
   if (branchName) {
@@ -224,7 +224,7 @@ export function renderLaserrPdfSection(doc, { stats, dateFrom, dateTo, branchNam
   autoTable(doc, {
     startY: subtitleY + 10,
     head: [['Paso', 'Descripción', 'Valor', '% paso anterior']],
-    body: steps.map(step => [step.label, step.desc, String(step.value), step.pct || '—']),
+    body: steps.map(step => [step.indent ? `   ${step.label}` : step.label, step.desc, String(step.value), step.pct || '—']),
     headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [225, 232, 240] },
     styles: { fontSize: 9, cellPadding: 4 },

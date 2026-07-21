@@ -85,7 +85,7 @@ export default function Informes() {
       <div className="grid sm:grid-cols-2 gap-4">
         <InformeCard
           to={`/centro/${branchId}/laserr`}
-          title="Exportar Laserr"
+          title="Exportar LASERR"
           desc="Funnel de conversión de leads"
           icon={(
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,7 +108,7 @@ export default function Informes() {
       <div className="bg-bg-200 border border-accent-200/30 rounded-2xl p-5 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-text-100">Exportación completa</p>
-          <p className="text-xs text-text-200 mt-0.5">Genera y envía por email el informe de Laserr y el de Socios juntos.</p>
+          <p className="text-xs text-text-200 mt-0.5">Genera y envía por email el informe de LASERR y el de Socios juntos.</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button
@@ -133,7 +133,7 @@ export default function Informes() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-bg-300">
-              <h3 className="text-text-100 font-semibold">Selección fecha Laserr</h3>
+              <h3 className="text-text-100 font-semibold">Selección fecha LASERR</h3>
               <button
                 onClick={() => !generating && setShowModal(false)}
                 className="text-text-200 hover:text-text-100 transition-colors text-lg leading-none"
@@ -142,7 +142,7 @@ export default function Informes() {
               </button>
             </div>
             <div className="px-6 py-5 space-y-4">
-              <p className="text-xs text-text-200">El rango de fechas aplica solo al informe de Laserr. Socios siempre refleja el estado actual.</p>
+              <p className="text-xs text-text-200">El rango de fechas aplica solo al informe de LASERR. Socios siempre refleja el estado actual.</p>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <label className="text-xs text-text-200 block mb-1">Desde</label>
