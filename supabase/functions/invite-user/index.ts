@@ -68,10 +68,29 @@ serve(async (req) => {
         to: [email],
         subject: 'Has sido invitado a Club Pilates Analytics',
         html: `
-          <p>Hola${full_name ? ' ' + full_name : ''},</p>
-          <p>Has sido invitado a unirte a Club Pilates Analytics.</p>
-          <p><a href="${actionLink}">Haz clic aquí para crear tu contraseña y acceder</a></p>
-          <p>Si no esperabas esta invitación, puedes ignorar este email.</p>
+          <div style="background-color:#f5f4f1;padding:40px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            <div style="max-width:480px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6e4df;">
+              <div style="padding:32px 32px 8px;text-align:center;">
+                <img src="https://analytics.clubpilatesia.es/logo-clubpilates.png" alt="Club Pilates" width="88" height="88" style="display:block;margin:0 auto;" />
+              </div>
+              <div style="padding:8px 32px 36px;text-align:center;">
+                <h1 style="margin:16px 0 8px;font-size:20px;line-height:1.3;color:#1a1a1a;">
+                  ${full_name ? `Hola ${full_name} 👋` : 'Has sido invitado'}
+                </h1>
+                <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#5a5a5a;">
+                  Te han dado acceso a <strong>Club Pilates Analytics</strong>, el panel de métricas de tu centro.
+                  Crea tu contraseña para empezar.
+                </p>
+                <a href="${actionLink}"
+                  style="display:inline-block;background-color:#00668c;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 28px;border-radius:10px;">
+                  Crear mi contraseña
+                </a>
+                <p style="margin:28px 0 0;font-size:12px;line-height:1.5;color:#a3a3a3;">
+                  Si no esperabas esta invitación, puedes ignorar este email.
+                </p>
+              </div>
+            </div>
+          </div>
         `,
       }),
     })
