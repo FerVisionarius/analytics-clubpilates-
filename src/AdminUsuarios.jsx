@@ -118,6 +118,7 @@ export default function AdminUsuarios() {
           full_name: inviteName,
           role: inviteRole,
           branch_ids: inviteRole === 'manager' ? inviteBranches : [],
+          redirectTo: `${window.location.origin}/set-password`,
         })
       })
       const data = await response.json()
