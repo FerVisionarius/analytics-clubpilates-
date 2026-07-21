@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from './AuthContext'
+import { useBranchFeatureEnabled } from './lib/branchFeatures'
 import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS } from './navConfig'
 
 function HomeCard({ to, icon, label, desc, editMode, hidden, onToggleHide }) {
@@ -75,10 +76,11 @@ function HomeSection({ title, items, base, editMode, hiddenNavItems, setNavItemH
 export default function Home() {
   const { branchId } = useParams()
   const { allowedNavItemIds, hiddenNavItems, setNavItemHidden } = useAuth()
+  const manualSurveyEnabled = useBranchFeatureEnabled(branchId, 'envio_encuesta_manual')
   const base = `/centro/${branchId}`
   const [editMode, setEditMode] = useState(false)
 
-  const roleFilter = item => allowedNavItemIds.includes(item.id)
+  const roleFilter = item => allowedNavItemIds.includes(item.id) && (item.id !== 'valoraciones' || manualSurveyEnabled)
   const sectionProps = { base, editMode, hiddenNavItems, setNavItemHidden }
 
   return (

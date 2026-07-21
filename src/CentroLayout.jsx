@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { supabase } from './lib/supabase'
+import { useBranchFeatureEnabled } from './lib/branchFeatures'
 import logo from './assets/logo-clubpilates.png'
 import { NAV_ITEMS, ADMIN_NAV_ITEMS, ADVANCED_NAV_ITEMS, SUPERADMIN_NAV_ITEMS, PAGE_TITLES, buildDocumentTitle } from './navConfig'
 
@@ -70,13 +71,14 @@ export default function CentroLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { profile, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, hiddenNavItems, setNavItemHidden, signOut } = useAuth()
+  const manualSurveyEnabled = useBranchFeatureEnabled(branchId, 'envio_encuesta_manual')
   const [branch, setBranch] = useState(null)
   const [allBranches, setAllBranches] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [editMode, setEditMode] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
-  const roleFilter = item => allowedNavItemIds.includes(item.id)
+  const roleFilter = item => allowedNavItemIds.includes(item.id) && (item.id !== 'valoraciones' || manualSurveyEnabled)
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
 
   useEffect(() => {
