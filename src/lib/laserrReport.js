@@ -51,14 +51,19 @@ export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateT
 
   const apuntadosIds = [...new Set(allBookings.map(b => b.user_id))]
 
-  const canceladosBookings = allBookings.filter(b => b.status === 'CANCELED')
-  const canceladosIds = [...new Set(canceladosBookings.map(b => b.user_id))]
+  const asistidosSet = new Set(
+    allBookings.filter(b => b.status !== 'CANCELED' && b.attended === true).map(b => b.user_id)
+  )
+  const canceladosSet = new Set(
+    allBookings.filter(b => b.status === 'CANCELED').map(b => b.user_id)
+  )
 
-  const asistidosBookings = allBookings.filter(b => b.status !== 'CANCELED' && b.attended === true)
-  const asistidosIds = [...new Set(asistidosBookings.map(b => b.user_id))]
+  const asistidosIds = apuntadosIds.filter(id => asistidosSet.has(id))
+  const canceladosIds = apuntadosIds.filter(id => !asistidosSet.has(id) && canceladosSet.has(id))
+  const noAsistieronIds = apuntadosIds.filter(id => !asistidosSet.has(id) && !canceladosSet.has(id))
 
-  const noAsistieronIds = apuntadosIds.filter(
-    id => !canceladosIds.includes(id) && !asistidosIds.includes(id)
+  const asistidosBookings = allBookings.filter(
+    b => b.status !== 'CANCELED' && b.attended === true && asistidosIds.includes(b.user_id)
   )
 
   const allUserIds = [...new Set([...apuntadosIds, ...canceladosIds, ...asistidosIds, ...noAsistieronIds])]
