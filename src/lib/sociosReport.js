@@ -117,33 +117,32 @@ export async function fetchSociosStats(supabaseClient, branchId) {
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
     })
 
-    const planCodes = [...new Set(allMembers.map(m => m.plan_code).filter(Boolean))]
-    let catalogMap = {}
-    
-    if (planCodes.length > 0) {
-      const { data: catalog } = await supabaseClient
-        .from('membership_plan_catalog')
-        .select('plan_code, is_recurring')
-        .eq('branch_id', branchId)
-        .in('plan_code', planCodes)
-    
-      if (catalog) {
-        catalog.forEach(c => { catalogMap[c.plan_code] = c.is_recurring })
-      }
+  const planCodes = [...new Set(allMembers.map(m => m.plan_code).filter(Boolean))]
+  let catalogMap = {}
+
+  if (planCodes.length > 0) {
+    const { data: catalog } = await supabaseClient
+      .from('membership_plan_catalog')
+      .select('plan_code, is_recurring')
+      .in('plan_code', planCodes)
+
+    if (catalog) {
+      catalog.forEach(c => { catalogMap[c.plan_code] = c.is_recurring })
     }
-    
-    let recurrente = 0
-    let noRecurrente = 0
-    let sinDato = 0
-    allMembers.forEach(m => {
-      if (!m.plan_code || !(m.plan_code in catalogMap)) {
-        sinDato++
-      } else if (catalogMap[m.plan_code]) {
-        recurrente++
-      } else {
-        noRecurrente++
-      }
-    })
+  }
+
+  let recurrente = 0
+  let noRecurrente = 0
+  let sinDato = 0
+  allMembers.forEach(m => {
+    if (!m.plan_code || !(m.plan_code in catalogMap)) {
+      sinDato++
+    } else if (catalogMap[m.plan_code]) {
+      recurrente++
+    } else {
+      noRecurrente++
+    }
+  })
 
   const tipoSocio = [
     { label: 'Recurrente', cantidad: recurrente },
