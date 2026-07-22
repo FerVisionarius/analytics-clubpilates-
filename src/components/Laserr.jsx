@@ -166,7 +166,7 @@ export default function Laserr({ branchId }) {
                 <div className="flex items-center gap-3">
                   {step.pct && (
                     <span className="text-xs text-text-200 bg-primary-100 px-2 py-0.5 rounded-full">
-                      {step.pct} del paso anterior
+                      {step.pct} {step.pctSuffix}
                     </span>
                   )}
                   <span className="text-2xl font-bold text-text-100">{step.value}</span>

@@ -190,14 +190,14 @@ export function buildLaserrSteps(stats) {
   if (!stats) return []
   return [
     { label: 'Leads totales', value: stats.leads, pct: null, desc: 'Nuevos leads en el período', list: stats.leadsList },
-    { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
-    { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), desc: 'Asistieron a la clase', list: stats.asistidosList },
-    { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: pct(stats.compraronEnMomento, stats.asistidos), desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList, indent: true },
-    { label: 'Compraron después', value: stats.compraronDespues, pct: pct(stats.compraronDespues, stats.asistidos), desc: 'Membresía en días posteriores', list: stats.compraronDespuesList, indent: true },
-    { label: 'No compraron', value: stats.noCompraron, pct: pct(stats.noCompraron, stats.asistidos), desc: 'Asistieron pero no compraron membresía', list: stats.noCompraronList, indent: true },
-    { label: 'No asistieron', value: stats.noAsistieron, pct: pct(stats.noAsistieron, stats.apuntados), desc: 'No asistieron ni cancelaron', list: stats.noAsistieronList },
-    { label: 'Cancelados', value: stats.cancelados, pct: pct(stats.cancelados, stats.apuntados), desc: 'Cancelaron la reserva de intro', list: stats.canceladosList },
-    { label: 'Nuevos miembros sin intro', value: stats.sinIntro, pct: pct(stats.sinIntro, stats.leads), desc: 'Compraron directamente sin pasar por clase intro', list: stats.sinIntroList },
+    { label: 'Apuntados a intro', value: stats.apuntados, pct: pct(stats.apuntados, stats.leads), pctSuffix: 'del paso anterior', desc: 'Reservaron clase de introducción', list: stats.apuntadosList },
+    { label: 'Asistieron', value: stats.asistidos, pct: pct(stats.asistidos, stats.apuntados), pctSuffix: 'del paso anterior', desc: 'Asistieron a la clase', list: stats.asistidosList },
+    { label: 'Compraron en el momento', value: stats.compraronEnMomento, pct: null, desc: 'Membresía el mismo día de la clase', list: stats.compraronEnMomentoList, indent: true },
+    { label: 'Compraron después', value: stats.compraronDespues, pct: null, desc: 'Membresía en días posteriores', list: stats.compraronDespuesList, indent: true },
+    { label: 'No compraron', value: stats.noCompraron, pct: null, desc: 'Asistieron pero no compraron membresía', list: stats.noCompraronList, indent: true },
+    { label: 'No asistieron', value: stats.noAsistieron, pct: pct(stats.noAsistieron, stats.apuntados), pctSuffix: 'de apuntados a intro', desc: 'No asistieron ni cancelaron', list: stats.noAsistieronList },
+    { label: 'Cancelados', value: stats.cancelados, pct: pct(stats.cancelados, stats.apuntados), pctSuffix: 'de apuntados a intro', desc: 'Cancelaron la reserva de intro', list: stats.canceladosList },
+    { label: 'Nuevos miembros sin intro', value: stats.sinIntro, pct: pct(stats.sinIntro, stats.apuntados), pctSuffix: 'de apuntados a intro', desc: 'Compraron directamente sin pasar por clase intro', list: stats.sinIntroList },
   ]
 }
 
