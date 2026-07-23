@@ -131,13 +131,36 @@ export async function fetchSociosStats(supabaseClient, branchId) {
     }
   }
 
+  const RECURRENTE_PATTERNS = [
+    'socio fundador',
+    'suscripción ilimitada',
+    'suscripcion ilimitada',
+    'suscripción 8 clases',
+    'suscripcion 8 clases',
+    'suscripción 4 clases',
+    'suscripcion 4 clases',
+  ]
+
   let recurrente = 0
   let noRecurrente = 0
-  let sinDato = 0
+
   allMembers.forEach(m => {
-    if (!m.plan_code || !(m.plan_code in catalogMap)) {
-      sinDato++
-    } else if (catalogMap[m.plan_code]) {
+    if (m.plan_code && m.plan_code in catalogMap) {
+      if (catalogMap[m.plan_code]) recurrente++
+      else noRecurrente++
+      return
+    }
+
+    const p = m.plan_name?.toLowerCase() || ''
+
+    if (p.includes('no recurrente')) {
+      noRecurrente++
+      return
+    }
+
+    const esRecurrente = RECURRENTE_PATTERNS.some(pattern => p.includes(pattern))
+
+    if (esRecurrente) {
       recurrente++
     } else {
       noRecurrente++
@@ -147,7 +170,6 @@ export async function fetchSociosStats(supabaseClient, branchId) {
   const tipoSocio = [
     { label: 'Recurrente', cantidad: recurrente },
     { label: 'No recurrente', cantidad: noRecurrente },
-    ...(sinDato > 0 ? [{ label: 'Sin dato', cantidad: sinDato }] : []),
   ]
 
   return { tipoSuscripcion, estadoSocios, tipoSocio, sinSuscripcion }
