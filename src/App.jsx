@@ -16,6 +16,7 @@ import Instructores from './components/Instructores'
 import Valoraciones from './components/Valoraciones'
 import Ajustes from './Ajustes'
 import Informes from './Informes'
+import Retencion from './components/Retencion'
 
 function AccessDenied() {
   return (
@@ -71,6 +72,12 @@ function RootRedirect() {
       <div className="w-6 h-6 border-2 border-accent-100 border-t-transparent rounded-full animate-spin" />
     </div>
   )
+}
+
+
+function RetencionPage() {
+  const { branchId } = useParams()
+  return <Retencion branchId={branchId} />
 }
 
 function AdminRootRedirect() {
@@ -144,7 +151,7 @@ function AppRoutes() {
         <Route path="instructores" element={<InstructoresPage />} />
         <Route path="valoraciones" element={<ValoracionesPage />} />
         <Route path="miembros" element={<SociosPage />} />
-        <Route path="retencion" element={<ComingSoon titulo="Retención y Churn" />} />
+        <Route path="retencion" element={<RetencionPage />} />
         <Route path="laserr" element={<LaserrPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
