@@ -16,11 +16,12 @@ export const RETENCION_STATUS_LABELS = {
     if (totalError) return { error: totalError.message }
   
     const { count: nuevosMiembros, error: nuevosError } = await supabaseClient
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .eq('branch_id', branchId)
-      .gte('created_at', fromISO)
-      .lte('created_at', toISO)
+    .from('members')
+    .select('*', { count: 'exact', head: true })
+    .eq('branch_id', branchId)
+    .eq('status', 'MEMBER')
+    .gte('created_at', fromISO)
+    .lte('created_at', toISO)
   
     if (nuevosError) return { error: nuevosError.message }
   
