@@ -33,28 +33,51 @@ export const RETENCION_STATUS_LABELS = {
       .eq('branch_id', branchId)
       .gte('cancelled_at', fromISO)
       .lte('cancelled_at', toISO)
-  
+
     if (cancelError) return { error: cancelError.message }
-  
+
+    const userIds = [...new Set((cancelaciones || []).map(c => c.user_id).filter(Boolean))]
+    const peopleMap = {}
+    if (userIds.length > 0) {
+      const { data: people } = await supabaseClient
+        .from('members')
+        .select('glofox_member_id, name, email')
+        .eq('branch_id', branchId)
+        .in('glofox_member_id', userIds)
+      if (people) people.forEach(p => { peopleMap[p.glofox_member_id] = p })
+    }
+
+    const buildCancelacion = (c) => {
+      const p = peopleMap[c.user_id]
+      return {
+        name: p?.name || '—',
+        email: p?.email || '—',
+        plan_name: c.plan_name,
+        cancelled_at: c.cancelled_at,
+      }
+    }
+
     const statusMap = {}
     ;(cancelaciones || []).forEach(c => {
       const key = c.status || 'Sin estado'
-      statusMap[key] = (statusMap[key] || 0) + 1
+      if (!statusMap[key]) statusMap[key] = []
+      statusMap[key].push(buildCancelacion(c))
     })
-  
+
     const canceladosPorMotivo = Object.entries(statusMap)
-      .map(([status, cantidad]) => ({
+      .map(([status, list]) => ({
         status,
         label: RETENCION_STATUS_LABELS[status] || status,
-        cantidad,
+        cantidad: list.length,
+        list,
       }))
       .sort((a, b) => b.cantidad - a.cantidad)
-  
+
     return {
       totalMiembros: totalMiembros || 0,
       nuevosMiembros: nuevosMiembros || 0,
       cancelados: (cancelaciones || []).length,
       canceladosPorMotivo,
-      cancelacionesList: cancelaciones || [],
+      cancelacionesList: (cancelaciones || []).map(buildCancelacion),
     }
   }
