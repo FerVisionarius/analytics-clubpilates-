@@ -15,6 +15,118 @@ export function pct(num, den) {
   return Math.round((num / den) * 100) + '%'
 }
 
+const WEEKDAY_ORDER = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+const toMadridWeekday = (iso) => {
+  const label = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', weekday: 'long' }).format(new Date(iso))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFrom, dateTo) {
+  const fromISO = dateFrom + 'T00:00:00+00:00'
+  const toISO = dateTo + 'T23:59:59+00:00'
+
+  const { data: classes } = await supabaseClient
+    .from('classes')
+    .select('event_id, trainer_id, scheduled_at')
+    .eq('branch_id', branchId)
+    .gte('scheduled_at', fromISO)
+    .lte('scheduled_at', toISO)
+    .ilike('name', '%introducci%')
+
+  if (!classes || classes.length === 0) return { porDia: [], porInstructor: [] }
+
+  const eventIds = [...new Set(classes.map(c => c.event_id).filter(Boolean))]
+
+  const { data: bookings } = await supabaseClient
+    .from('bookings')
+    .select('user_id, attended, time_start, event_id, status')
+    .eq('branch_id', branchId)
+    .gte('time_start', fromISO)
+    .lte('time_start', toISO)
+    .in('event_id', eventIds.length > 0 ? eventIds : ['none'])
+
+  const { data: staff } = await supabaseClient
+    .from('staff')
+    .select('glofox_user_id, name')
+    .eq('branch_id', branchId)
+
+  const staffMap = {}
+  ;(staff || []).forEach(s => { staffMap[s.glofox_user_id] = s.name })
+
+  const bookingsByEvent = {}
+  ;(bookings || []).forEach(b => {
+    if (!bookingsByEvent[b.event_id]) bookingsByEvent[b.event_id] = []
+    bookingsByEvent[b.event_id].push(b)
+  })
+
+  const allAsistidoIds = [...new Set(
+    (bookings || []).filter(b => b.status !== 'CANCELED' && b.attended === true).map(b => b.user_id)
+  )]
+
+  const primeraMembresiaMap = {}
+  if (allAsistidoIds.length > 0) {
+    const { data: membresias } = await supabaseClient
+      .from('new_memberships_log')
+      .select('user_id, contract_start')
+      .in('user_id', allAsistidoIds)
+      .order('contract_start', { ascending: true })
+
+    ;(membresias || []).forEach(m => {
+      if (!primeraMembresiaMap[m.user_id]) primeraMembresiaMap[m.user_id] = m
+    })
+  }
+
+  const diaMap = {}
+  classes.forEach(c => {
+    const dia = toMadridWeekday(c.scheduled_at)
+    if (!diaMap[dia]) diaMap[dia] = { clases: 0, instructores: new Set(), apuntados: 0, asistidos: 0 }
+    diaMap[dia].clases += 1
+    if (c.trainer_id && staffMap[c.trainer_id]) diaMap[dia].instructores.add(staffMap[c.trainer_id])
+    const evBookings = bookingsByEvent[c.event_id] || []
+    diaMap[dia].apuntados += evBookings.length
+    diaMap[dia].asistidos += evBookings.filter(b => b.status !== 'CANCELED' && b.attended === true).length
+  })
+
+  const porDia = WEEKDAY_ORDER
+    .filter(dia => diaMap[dia])
+    .map(dia => ({
+      dia,
+      clases: diaMap[dia].clases,
+      instructores: [...diaMap[dia].instructores].join(', ') || 'Sin asignar',
+      apuntados: diaMap[dia].apuntados,
+      asistidos: diaMap[dia].asistidos,
+    }))
+
+  const instructorMap = {}
+  classes.forEach(c => {
+    const tid = c.trainer_id || 'sin_asignar'
+    if (!instructorMap[tid]) instructorMap[tid] = { clases: 0, apuntados: 0, asistidos: 0, asistidoIds: new Set() }
+    instructorMap[tid].clases += 1
+    const evBookings = bookingsByEvent[c.event_id] || []
+    instructorMap[tid].apuntados += evBookings.length
+    const asistidosEv = evBookings.filter(b => b.status !== 'CANCELED' && b.attended === true)
+    instructorMap[tid].asistidos += asistidosEv.length
+    asistidosEv.forEach(b => instructorMap[tid].asistidoIds.add(b.user_id))
+  })
+
+  const porInstructor = Object.entries(instructorMap)
+    .map(([tid, stats]) => {
+      const comprados = [...stats.asistidoIds].filter(uid => primeraMembresiaMap[uid]).length
+      return {
+        instructor: staffMap[tid] || 'Sin asignar',
+        clases: stats.clases,
+        apuntados: stats.apuntados,
+        asistidos: stats.asistidos,
+        comprados,
+        retencion: pct(comprados, stats.asistidos),
+      }
+    })
+    .sort((a, b) => b.asistidos - a.asistidos)
+
+  return { porDia, porInstructor }
+}
+
 export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateTo) {
   const fromISO = dateFrom + 'T00:00:00+00:00'
   const toISO = dateTo + 'T23:59:59+00:00'

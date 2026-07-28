@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import jsPDF from 'jspdf'
-import { fetchLaserrStats, buildLaserrSteps, renderLaserrPdfSection, pct, formatDate } from '../lib/laserrReport'
+import { fetchLaserrStats, fetchLaserrClassBreakdown, buildLaserrSteps, renderLaserrPdfSection, pct, formatDate } from '../lib/laserrReport'
 
 const today = new Date()
 const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
@@ -17,6 +17,36 @@ const membershipLabel = (type) => {
   return type || '—'
 }
 
+function KpiTable({ titulo, columnas, filas, renderRow }) {
+  return (
+    <div className="bg-bg-200 border border-bg-300 rounded-2xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-bg-300">
+        <h3 className="text-text-100 font-semibold">{titulo}</h3>
+      </div>
+      {filas.length === 0 ? (
+        <p className="text-sm text-text-200 text-center py-6">Sin clases de intro en este período</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="bg-bg-200 border-b border-bg-300">
+            <tr>
+              {columnas.map(c => (
+                <th key={c} className="text-left text-xs text-primary-300 font-medium px-6 py-3">{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((f, i) => (
+              <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
+                {renderRow(f)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
 export default function Laserr({ branchId }) {
   const [dateFrom, setDateFrom] = useState(() => {
     return sessionStorage.getItem(`laserr_dateFrom_${branchId}`) || firstOfMonth
@@ -26,6 +56,7 @@ export default function Laserr({ branchId }) {
   })
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState(null)
+  const [classBreakdown, setClassBreakdown] = useState(null)
   const [modal, setModal] = useState(() => {
     const saved = sessionStorage.getItem(`laserr_modal_${branchId}`)
     return saved ? JSON.parse(saved) : null
@@ -56,8 +87,13 @@ export default function Laserr({ branchId }) {
   async function fetchData() {
     setLoading(true)
     setStats(null)
-    const result = await fetchLaserrStats(supabase, branchId, dateFrom, dateTo)
+    setClassBreakdown(null)
+    const [result, breakdown] = await Promise.all([
+      fetchLaserrStats(supabase, branchId, dateFrom, dateTo),
+      fetchLaserrClassBreakdown(supabase, branchId, dateFrom, dateTo),
+    ])
     setStats(result)
+    setClassBreakdown(breakdown)
     setLoading(false)
   }
 
@@ -204,6 +240,41 @@ export default function Laserr({ branchId }) {
               </div>
             </div>
           </div>
+
+          {classBreakdown && (
+            <div className="space-y-6 pt-6">
+              <KpiTable
+                titulo="Clases de intro por día de la semana"
+                columnas={['Día', 'Nº clases', 'Instructor', 'Apuntados', 'Asistidos']}
+                filas={classBreakdown.porDia}
+                renderRow={f => (
+                  <>
+                    <td className="px-6 py-3 text-text-100 font-medium">{f.dia}</td>
+                    <td className="px-6 py-3 text-text-100">{f.clases}</td>
+                    <td className="px-6 py-3 text-text-200">{f.instructores}</td>
+                    <td className="px-6 py-3 text-text-200">{f.apuntados}</td>
+                    <td className="px-6 py-3 text-text-200">{f.asistidos}</td>
+                  </>
+                )}
+              />
+
+              <KpiTable
+                titulo="Clases de intro por instructor"
+                columnas={['Instructor', 'Nº clases', 'Apuntados', 'Asistidos', 'Compraron', 'Retención']}
+                filas={classBreakdown.porInstructor}
+                renderRow={f => (
+                  <>
+                    <td className="px-6 py-3 text-text-100 font-medium">{f.instructor}</td>
+                    <td className="px-6 py-3 text-text-100">{f.clases}</td>
+                    <td className="px-6 py-3 text-text-200">{f.apuntados}</td>
+                    <td className="px-6 py-3 text-text-200">{f.asistidos}</td>
+                    <td className="px-6 py-3 text-text-200">{f.comprados}</td>
+                    <td className="px-6 py-3 text-text-100 font-medium">{f.retencion}</td>
+                  </>
+                )}
+              />
+            </div>
+          )}
         </div>
       )}
 
