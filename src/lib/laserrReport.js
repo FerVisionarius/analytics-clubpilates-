@@ -1,4 +1,5 @@
 import autoTable from 'jspdf-autotable'
+import { fetchEventRatings } from './ratings'
 
 export const toMadridDate = (iso) => {
   const d = new Date(iso)
@@ -28,7 +29,7 @@ export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFr
 
   const { data: classes } = await supabaseClient
     .from('classes')
-    .select('event_id, trainer_id, scheduled_at')
+    .select('event_id, name, trainer_id, scheduled_at')
     .eq('branch_id', branchId)
     .gte('scheduled_at', fromISO)
     .lte('scheduled_at', toISO)
@@ -40,7 +41,7 @@ export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFr
 
   const { data: bookings } = await supabaseClient
     .from('bookings')
-    .select('user_id, attended, time_start, event_id, status')
+    .select('user_id, attended, time_start, event_id, status, is_late_cancellation')
     .eq('branch_id', branchId)
     .gte('time_start', fromISO)
     .lte('time_start', toISO)
@@ -77,51 +78,84 @@ export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFr
     })
   }
 
-  const diaMap = {}
-  classes.forEach(c => {
-    const dia = toMadridWeekday(c.scheduled_at)
-    if (!diaMap[dia]) diaMap[dia] = { clases: 0, instructores: new Set(), apuntados: 0, asistidos: 0 }
-    diaMap[dia].clases += 1
-    if (c.trainer_id && staffMap[c.trainer_id]) diaMap[dia].instructores.add(staffMap[c.trainer_id])
-    const evBookings = bookingsByEvent[c.event_id] || []
-    diaMap[dia].apuntados += evBookings.length
-    diaMap[dia].asistidos += evBookings.filter(b => b.status !== 'CANCELED' && b.attended === true).length
-  })
+  const ratingsByEvent = {}
+  const allRatings = await fetchEventRatings(supabaseClient, branchId)
+  allRatings.forEach(r => { ratingsByEvent[r.eventId] = r })
 
+  const classDetails = classes.map(c => {
+    const evBookings = bookingsByEvent[c.event_id] || []
+    const asistidosEv = evBookings.filter(b => b.status !== 'CANCELED' && b.attended === true)
+    const canceladosEv = evBookings.filter(b => b.status === 'CANCELED')
+    const canceladosTardia = canceladosEv.filter(b => b.is_late_cancellation === true).length
+    const canceladosNormal = canceladosEv.length - canceladosTardia
+    const rating = ratingsByEvent[c.event_id]
+
+    return {
+      eventId: c.event_id,
+      name: c.name,
+      scheduledAt: c.scheduled_at,
+      dia: toMadridWeekday(c.scheduled_at),
+      instructor: staffMap[c.trainer_id] || 'Sin asignar',
+      apuntados: evBookings.length,
+      asistidos: asistidosEv.length,
+      cancelados: canceladosEv.length,
+      canceladosNormal,
+      canceladosTardia,
+      asistidoIds: asistidosEv.map(b => b.user_id),
+      ratingAvg: rating?.avg ?? null,
+      ratingCount: rating?.count ?? 0,
+    }
+  }).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
+
+  const sum = (list, field) => list.reduce((s, c) => s + c[field], 0)
+
+  const groupBy = (keyFn) => {
+    const map = {}
+    classDetails.forEach(c => {
+      const key = keyFn(c)
+      if (!map[key]) map[key] = []
+      map[key].push(c)
+    })
+    return map
+  }
+
+  const buildGroupStats = (list) => {
+    const apuntados = sum(list, 'apuntados')
+    const asistidos = sum(list, 'asistidos')
+    const cancelados = sum(list, 'cancelados')
+    const canceladosNormal = sum(list, 'canceladosNormal')
+    const canceladosTardia = sum(list, 'canceladosTardia')
+    const asistidoIds = new Set(list.flatMap(c => c.asistidoIds))
+    const comprados = [...asistidoIds].filter(uid => primeraMembresiaMap[uid]).length
+    return {
+      clases: list.length,
+      apuntados,
+      asistidos,
+      cancelados,
+      canceladosNormal,
+      canceladosTardia,
+      tasaCancelacion: pct(cancelados, apuntados),
+      comprados,
+      retencion: pct(comprados, asistidos),
+      classList: list,
+    }
+  }
+
+  const diaMap = groupBy(c => c.dia)
   const porDia = WEEKDAY_ORDER
     .filter(dia => diaMap[dia])
     .map(dia => ({
       dia,
-      clases: diaMap[dia].clases,
-      instructores: [...diaMap[dia].instructores].join(', ') || 'Sin asignar',
-      apuntados: diaMap[dia].apuntados,
-      asistidos: diaMap[dia].asistidos,
+      instructores: [...new Set(diaMap[dia].map(c => c.instructor))].join(', '),
+      ...buildGroupStats(diaMap[dia]),
     }))
 
-  const instructorMap = {}
-  classes.forEach(c => {
-    const tid = c.trainer_id || 'sin_asignar'
-    if (!instructorMap[tid]) instructorMap[tid] = { clases: 0, apuntados: 0, asistidos: 0, asistidoIds: new Set() }
-    instructorMap[tid].clases += 1
-    const evBookings = bookingsByEvent[c.event_id] || []
-    instructorMap[tid].apuntados += evBookings.length
-    const asistidosEv = evBookings.filter(b => b.status !== 'CANCELED' && b.attended === true)
-    instructorMap[tid].asistidos += asistidosEv.length
-    asistidosEv.forEach(b => instructorMap[tid].asistidoIds.add(b.user_id))
-  })
-
+  const instructorMap = groupBy(c => c.instructor)
   const porInstructor = Object.entries(instructorMap)
-    .map(([tid, stats]) => {
-      const comprados = [...stats.asistidoIds].filter(uid => primeraMembresiaMap[uid]).length
-      return {
-        instructor: staffMap[tid] || 'Sin asignar',
-        clases: stats.clases,
-        apuntados: stats.apuntados,
-        asistidos: stats.asistidos,
-        comprados,
-        retencion: pct(comprados, stats.asistidos),
-      }
-    })
+    .map(([instructor, list]) => ({
+      instructor,
+      ...buildGroupStats(list),
+    }))
     .sort((a, b) => b.asistidos - a.asistidos)
 
   return { porDia, porInstructor }
