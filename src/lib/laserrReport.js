@@ -1,5 +1,5 @@
 import autoTable from 'jspdf-autotable'
-import { fetchEventRatings } from './ratings'
+import { fetchEventRatings } from './ratings.js'
 
 export const toMadridDate = (iso) => {
   const d = new Date(iso)
