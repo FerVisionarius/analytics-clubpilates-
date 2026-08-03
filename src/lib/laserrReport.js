@@ -16,6 +16,11 @@ export function pct(num, den) {
   return Math.round((num / den) * 100) + '%'
 }
 
+// Distintos centros nombran la clase de intro de formas diferentes:
+// "Clase de introducción", "Clase Introductoria", "Clase de Prueba",
+// "FREE INTRO CLASS"... Todas cuentan igual para el funnel LASERR.
+export const INTRO_CLASS_FILTER = 'name.ilike.%intro%,name.ilike.%prueba%'
+
 const WEEKDAY_ORDER = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 const toMadridWeekday = (iso) => {
@@ -33,7 +38,7 @@ export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFr
     .eq('branch_id', branchId)
     .gte('scheduled_at', fromISO)
     .lte('scheduled_at', toISO)
-    .ilike('name', '%introducci%')
+    .or(INTRO_CLASS_FILTER)
 
   if (!classes || classes.length === 0) return { porDia: [], porInstructor: [] }
 
@@ -178,7 +183,7 @@ export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateT
     .eq('branch_id', branchId)
     .gte('scheduled_at', fromISO)
     .lte('scheduled_at', toISO)
-    .ilike('name', '%introducci%')
+    .or(INTRO_CLASS_FILTER)
 
   const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
 
