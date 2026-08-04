@@ -81,7 +81,7 @@ export default function Retencion({ branchId }) {
 
       {!loading && !error && stats && (
         <div className="space-y-6 max-w-4xl">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-bg-200 border border-bg-300 rounded-2xl p-5">
               <p className="text-xs text-primary-300 mb-1">Miembros totales</p>
               <p className="text-3xl font-bold text-text-100">{stats.totalMiembros}</p>
@@ -90,12 +90,49 @@ export default function Retencion({ branchId }) {
             <div className="bg-bg-200 border border-bg-300 rounded-2xl p-5">
               <p className="text-xs text-primary-300 mb-1">Nuevos miembros</p>
               <p className="text-3xl font-bold text-green-600">{stats.nuevosMiembros}</p>
-              <p className="text-xs text-text-200 mt-1">En el período seleccionado</p>
+              <p className="text-xs text-text-200 mt-1">Nuevas altas en el período</p>
             </div>
             <div className="bg-bg-200 border border-bg-300 rounded-2xl p-5">
               <p className="text-xs text-primary-300 mb-1">Cancelados</p>
               <p className="text-3xl font-bold text-red-600">{stats.cancelados}</p>
-              <p className="text-xs text-text-200 mt-1">En el período seleccionado</p>
+              <p className="text-xs text-text-200 mt-1">Bajas reales (sin cambios de plan)</p>
+            </div>
+            <div className="bg-bg-200 border border-bg-300 rounded-2xl p-5">
+              <p className="text-xs text-primary-300 mb-1">Cambios de suscripción</p>
+              <p className="text-3xl font-bold text-amber-500">{stats.cambiosSuscripcion}</p>
+              <p className="text-xs text-text-200 mt-1">Cambiaron de plan (ni alta ni baja)</p>
+            </div>
+          </div>
+
+          <div className="bg-bg-200 border border-bg-300 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-bg-300">
+              <h3 className="text-text-100 font-semibold">Nuevos miembros del período</h3>
+            </div>
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-bg-200 border-b border-bg-300 z-10">
+                  <tr>
+                    <th className="text-left text-xs text-primary-300 font-medium px-6 py-3 whitespace-nowrap">Nombre</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Email</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Plan</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Fecha de alta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.nuevosMiembrosList.length === 0 ? (
+                    <tr><td colSpan={4} className="px-6 py-6 text-center text-primary-300">Sin nuevos miembros en este período</td></tr>
+                  ) : (
+                    stats.nuevosMiembrosList.map((p, i) => (
+                      <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
+                        <td className="px-6 py-3 text-text-100 font-medium whitespace-nowrap">{p.name}</td>
+                        <td className="px-4 py-3 text-text-200 whitespace-nowrap">{p.email}</td>
+                        <td className="px-4 py-3 text-text-200 max-w-xs truncate" title={p.plan_name || '—'}>{p.plan_name || '—'}</td>
+                        <td className="px-4 py-3 text-text-200 whitespace-nowrap">{formatDate(p.created_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -135,6 +172,41 @@ export default function Retencion({ branchId }) {
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="bg-bg-200 border border-bg-300 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-bg-300">
+              <h3 className="text-text-100 font-semibold">Cambios de suscripción</h3>
+              <p className="text-xs text-text-200 mt-0.5">Cancelaron un plan y dieron de alta otro en el período. No cuentan como baja ni como nueva alta.</p>
+            </div>
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-bg-200 border-b border-bg-300 z-10">
+                  <tr>
+                    <th className="text-left text-xs text-primary-300 font-medium px-6 py-3 whitespace-nowrap">Nombre</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Email</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Plan anterior</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Plan nuevo</th>
+                    <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.cambiosList.length === 0 ? (
+                    <tr><td colSpan={5} className="px-6 py-6 text-center text-primary-300">Sin cambios de suscripción en este período</td></tr>
+                  ) : (
+                    stats.cambiosList.map((p, i) => (
+                      <tr key={i} className="border-b border-bg-300/60 hover:bg-primary-100/40">
+                        <td className="px-6 py-3 text-text-100 font-medium whitespace-nowrap">{p.name}</td>
+                        <td className="px-4 py-3 text-text-200 whitespace-nowrap">{p.email}</td>
+                        <td className="px-4 py-3 text-text-200 max-w-xs truncate" title={p.plan_anterior}>{p.plan_anterior}</td>
+                        <td className="px-4 py-3 text-text-200 max-w-xs truncate" title={p.plan_nuevo}>{p.plan_nuevo}</td>
+                        <td className="px-4 py-3 text-text-200 whitespace-nowrap">{formatDate(p.cambiado_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
