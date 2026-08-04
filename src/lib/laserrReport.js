@@ -45,7 +45,7 @@ export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFr
   const eventIds = [...new Set(classes.map(c => c.event_id).filter(Boolean))]
 
   const { data: bookings } = await supabaseClient
-    .from('bookings')
+    .from('class_bookings')
     .select('user_id, attended, time_start, event_id, status, is_late_cancellation')
     .eq('branch_id', branchId)
     .gte('time_start', fromISO)
@@ -188,7 +188,7 @@ export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateT
   const activeEventIds = [...new Set((activeClasses || []).map(c => c.event_id).filter(Boolean))]
 
   const { data: allBookings } = await supabaseClient
-    .from('bookings')
+    .from('class_bookings')
     .select('glofox_booking_id, user_id, attended, time_start, event_id, status')
     .eq('branch_id', branchId)
     .gte('time_start', fromISO)
