@@ -14,10 +14,37 @@ function formatDateTime(iso) {
   })
 }
 
+function monthKey(iso) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit' }).format(new Date(iso))
+}
+
+function monthLabel(iso) {
+  const label = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', month: 'long', year: 'numeric' }).format(new Date(iso))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+// Agrupa las clases valoradas por mes (según la fecha de la clase). La media
+// del mes se pondera por el nº de valoraciones de cada clase.
+function groupByMonth(classes) {
+  const map = {}
+  classes.forEach(c => {
+    if (!c.lastScheduledAt) return
+    const key = monthKey(c.lastScheduledAt)
+    if (!map[key]) map[key] = { key, label: monthLabel(c.lastScheduledAt), classes: [], sum: 0, count: 0 }
+    map[key].classes.push(c)
+    map[key].sum += c.avg * c.count
+    map[key].count += c.count
+  })
+  return Object.values(map)
+    .map(m => ({ ...m, avg: m.count > 0 ? m.sum / m.count : 0 }))
+    .sort((a, b) => (a.key < b.key ? 1 : -1))
+}
+
 export default function Valoraciones({ branchId }) {
   const [loading, setLoading] = useState(true)
   const [classes, setClasses] = useState([])
   const [eventModal, setEventModal] = useState(null)
+  const [expandedMonth, setExpandedMonth] = useState(null)
 
   useEffect(() => {
     if (branchId) fetchData()
@@ -65,26 +92,61 @@ export default function Valoraciones({ branchId }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {classes.map(c => (
-            <div
-              key={c.eventId}
-              onClick={() => openEventModal(c)}
-              className="bg-bg-200 border border-bg-300 rounded-xl p-4 cursor-pointer hover:border-primary-200 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-sm font-medium text-text-100">{c.name}</p>
-                <p className="text-xs text-text-200 mt-0.5">
-                  {c.trainerName} · Última sesión: {formatDateTime(c.lastScheduledAt)}
-                </p>
+          {groupByMonth(classes).map(month => {
+            const open = expandedMonth === month.key
+            return (
+              <div key={month.key} className="bg-bg-200 border border-bg-300 rounded-xl overflow-hidden">
+                <div
+                  onClick={() => setExpandedMonth(open ? null : month.key)}
+                  className="p-4 cursor-pointer hover:bg-primary-100/30 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className={`w-4 h-4 text-primary-300 transition-transform ${open ? 'rotate-90' : ''}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-text-100">{month.label}</p>
+                      <p className="text-xs text-text-200 mt-0.5">Valoración Media</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-text-200 bg-primary-100 px-2 py-0.5 rounded-full">
+                      {month.count} valoraciones
+                    </span>
+                    <span className="text-2xl font-bold text-text-100">{month.avg.toFixed(1)} ⭐</span>
+                  </div>
+                </div>
+
+                {open && (
+                  <div className="border-t border-bg-300 p-3 space-y-2 bg-bg-100/40">
+                    {month.classes.map(c => (
+                      <div
+                        key={c.eventId}
+                        onClick={() => openEventModal(c)}
+                        className="bg-bg-200 border border-bg-300 rounded-lg p-3 cursor-pointer hover:border-primary-200 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-text-100">{c.name}</p>
+                          <p className="text-xs text-text-200 mt-0.5">
+                            {c.trainerName} · Última sesión: {formatDateTime(c.lastScheduledAt)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs text-text-200 bg-primary-100 px-2 py-0.5 rounded-full">
+                            {c.count} valoraciones
+                          </span>
+                          <span className="text-xl font-bold text-text-100">{c.avg.toFixed(1)} ⭐</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs text-text-200 bg-primary-100 px-2 py-0.5 rounded-full">
-                  {c.count} valoraciones
-                </span>
-                <span className="text-2xl font-bold text-text-100">{c.avg.toFixed(1)} ⭐</span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
