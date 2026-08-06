@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from './AuthContext'
 import AjustesFuncionalidades from './AjustesFuncionalidades'
 import AjustesPermisos from './AjustesPermisos'
+import AjustesAccesos from './AjustesAccesos'
 
 export default function Ajustes({ readOnly }) {
   const { isSuperAdmin } = useAuth()
@@ -23,10 +24,16 @@ export default function Ajustes({ readOnly }) {
             Permisos
           </button>
         )}
+        {isSuperAdmin && (
+          <button onClick={() => setTab('accesos')} className={tabClass(tab === 'accesos')}>
+            Accesos
+          </button>
+        )}
       </div>
 
       {tab === 'funcionalidades' && <AjustesFuncionalidades readOnly={readOnly} />}
       {tab === 'permisos' && isSuperAdmin && <AjustesPermisos />}
+      {tab === 'accesos' && isSuperAdmin && <AjustesAccesos />}
     </div>
   )
 }
