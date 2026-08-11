@@ -1,6 +1,6 @@
 export const RETENCION_STATUS_LABELS = {
-    'EXPIRED': 'Expiró (no renovó)',
-    'CANCELLED': 'Cancelado por el socio',
+    'EXPIRED': 'Cancelación programada',
+    'CANCELLED': 'Cancelación inmediata',
   }
 
   export async function fetchRetencionStats(supabaseClient, branchId, dateFrom, dateTo) {
