@@ -24,7 +24,7 @@ function InfoTip({ text }) {
       <svg className="w-3.5 h-3.5 text-primary-300 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <span className="absolute right-0 top-6 z-20 hidden group-hover:block bg-text-100 text-white text-xs font-normal normal-case rounded-lg px-3 py-2 w-60 shadow-xl">
+      <span className="absolute right-0 top-6 z-20 hidden group-hover:block bg-text-100 text-white text-xs font-normal normal-case whitespace-normal leading-snug rounded-lg px-3 py-2 w-60 shadow-xl">
         {text}
       </span>
     </span>
