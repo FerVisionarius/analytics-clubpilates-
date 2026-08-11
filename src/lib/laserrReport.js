@@ -252,8 +252,11 @@ export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateT
     .lte('contract_start', toISO)
 
   if (nuevasMembresias) {
+    // Solo cuentan los que son lead de este período (alta en Glofox por primera
+    // vez en el rango). Así se excluyen los cambios de suscripción de socios
+    // que ya existían.
     const sinIntroRows = nuevasMembresias.filter(
-      m => !asistidosIds.includes(m.user_id) && m.plan_name !== null
+      m => leadsMap[m.user_id] && !asistidosIds.includes(m.user_id) && m.plan_name !== null
     )
 
     const sinIntroUserIds = sinIntroRows.map(m => m.user_id)
