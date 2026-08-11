@@ -18,6 +18,19 @@ function formatDateTime(iso) {
 
 const pctFmt = (n) => `${Math.round(n * 100)}%`
 
+function InfoTip({ text }) {
+  return (
+    <span className="relative group inline-flex align-middle ml-1">
+      <svg className="w-3.5 h-3.5 text-primary-300 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span className="absolute right-0 top-6 z-20 hidden group-hover:block bg-text-100 text-white text-xs font-normal normal-case rounded-lg px-3 py-2 w-60 shadow-xl">
+        {text}
+      </span>
+    </span>
+  )
+}
+
 export default function Instructores({ branchId, initialTab = 'ocupacion' }) {
   const [tab, setTab] = useState(initialTab)
   const [dateFrom, setDateFrom] = useState(firstOfMonth)
@@ -129,15 +142,21 @@ export default function Instructores({ branchId, initialTab = 'ocupacion' }) {
         ocupacion.length === 0 ? (
           <div className="text-center py-20 text-primary-300">No hay clases en este período</div>
         ) : (
-          <div className="bg-bg-200 border border-bg-300 rounded-2xl overflow-hidden max-w-3xl">
+          <div className="bg-bg-200 border border-bg-300 rounded-2xl max-w-3xl">
             <table className="w-full text-sm">
               <thead className="bg-bg-200 border-b border-bg-300">
                 <tr>
                   <th className="text-left text-xs text-primary-300 font-medium px-6 py-3">Instructor</th>
                   <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Clases</th>
                   <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Reservas / Plazas</th>
-                  <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Ocupación</th>
-                  <th className="text-left text-xs text-primary-300 font-medium px-4 py-3">Asistencia</th>
+                  <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">
+                    Ocupación
+                    <InfoTip text="Reservas ÷ plazas: qué % de la capacidad de sus clases se llegó a reservar." />
+                  </th>
+                  <th className="text-left text-xs text-primary-300 font-medium px-4 py-3 whitespace-nowrap">
+                    Asistencia
+                    <InfoTip text="Asistidos ÷ reservas: de los que reservaron, qué % vino de verdad a clase." />
+                  </th>
                 </tr>
               </thead>
               <tbody>
