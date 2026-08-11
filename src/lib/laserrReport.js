@@ -140,6 +140,7 @@ export async function fetchLaserrClassBreakdown(supabaseClient, branchId, dateFr
       canceladosNormal,
       canceladosTardia,
       tasaCancelacion: pct(cancelados, apuntados),
+      tasaAsistencia: pct(asistidos, apuntados),
       comprados,
       retencion: pct(comprados, asistidos),
       classList: list,

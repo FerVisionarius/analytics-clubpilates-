@@ -18,10 +18,6 @@ const membershipLabel = (type) => {
   return type || '—'
 }
 
-const motivoCancelacion = (f) => {
-  if (f.cancelados === 0) return '—'
-  return `${f.canceladosNormal} normal · ${f.canceladosTardia} tardía`
-}
 
 function formatDateTime(iso) {
   if (!iso) return '—'
@@ -277,7 +273,7 @@ export default function Laserr({ branchId }) {
             <div className="space-y-6 pt-6">
               <KpiTable
                 titulo="Clases de intro por día de la semana"
-                columnas={['Día', 'Nº clases', 'Instructor', 'Apuntados', 'Asistidos', 'Cancelados', 'Motivo cancelación', '% cancelación']}
+                columnas={['Día', 'Nº clases', 'Instructor', 'Apuntados', 'Asistidos', 'Cancelados', '% asistencia']}
                 filas={classBreakdown.porDia}
                 onRowClick={f => setClassModal({ title: `Clases de intro — ${f.dia}`, classes: f.classList })}
                 renderRow={f => (
@@ -288,15 +284,14 @@ export default function Laserr({ branchId }) {
                     <td className="px-6 py-3 text-text-200">{f.apuntados}</td>
                     <td className="px-6 py-3 text-text-200">{f.asistidos}</td>
                     <td className="px-6 py-3 text-text-200">{f.cancelados}</td>
-                    <td className="px-6 py-3 text-text-200 whitespace-nowrap">{motivoCancelacion(f)}</td>
-                    <td className="px-6 py-3 text-text-200">{f.tasaCancelacion}</td>
+                    <td className="px-6 py-3 text-text-200">{f.tasaAsistencia}</td>
                   </>
                 )}
               />
 
               <KpiTable
                 titulo="Clases de intro por instructor"
-                columnas={['Instructor', 'Nº clases', 'Apuntados', 'Asistidos', 'Cancelados', 'Motivo cancelación', '% cancelación', 'Compraron', 'Retención']}
+                columnas={['Instructor', 'Nº clases', 'Apuntados', 'Asistidos', 'Cancelados', '% asistencia', 'Compraron', 'Retención']}
                 filas={classBreakdown.porInstructor}
                 onRowClick={f => setClassModal({ title: `Clases de intro — ${f.instructor}`, classes: f.classList })}
                 renderRow={f => (
@@ -306,8 +301,7 @@ export default function Laserr({ branchId }) {
                     <td className="px-6 py-3 text-text-200">{f.apuntados}</td>
                     <td className="px-6 py-3 text-text-200">{f.asistidos}</td>
                     <td className="px-6 py-3 text-text-200">{f.cancelados}</td>
-                    <td className="px-6 py-3 text-text-200 whitespace-nowrap">{motivoCancelacion(f)}</td>
-                    <td className="px-6 py-3 text-text-200">{f.tasaCancelacion}</td>
+                    <td className="px-6 py-3 text-text-200">{f.tasaAsistencia}</td>
                     <td className="px-6 py-3 text-text-200">{f.comprados}</td>
                     <td className="px-6 py-3 text-text-100 font-medium">{f.retencion}</td>
                   </>
