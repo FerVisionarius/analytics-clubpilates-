@@ -14,6 +14,7 @@ import AdminUsuarios from './AdminUsuarios'
 import EstadisticasSocios from './components/EstadisticasSocios'
 import Instructores from './components/Instructores'
 import Valoraciones from './components/Valoraciones'
+import Sugerencias from './components/Sugerencias'
 import Ajustes from './Ajustes'
 import Informes from './Informes'
 import Retencion from './components/Retencion'
@@ -150,6 +151,7 @@ function AppRoutes() {
         <Route path="ocupacion" element={<OcupacionPage />} />
         <Route path="instructores" element={<InstructoresPage />} />
         <Route path="valoraciones" element={<ValoracionesPage />} />
+        <Route path="sugerencias" element={<SugerenciasPage />} />
         <Route path="miembros" element={<SociosPage />} />
         <Route path="retencion" element={<RetencionPage />} />
         <Route path="laserr" element={<LaserrPage />} />
@@ -187,6 +189,13 @@ function InstructoresPage() {
 function ValoracionesPage() {
   const { branchId } = useParams()
   return <Valoraciones branchId={branchId} />
+}
+
+function SugerenciasPage() {
+  const { branchId } = useParams()
+  const { allowedNavItemIds } = useAuth()
+  if (!allowedNavItemIds.includes('sugerencias')) return <AccessDenied />
+  return <Sugerencias branchId={branchId} />
 }
 
 function OcupacionPromedioPage() {

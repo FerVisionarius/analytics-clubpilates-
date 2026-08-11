@@ -80,7 +80,7 @@ export default function Home() {
   const base = `/centro/${branchId}`
   const [editMode, setEditMode] = useState(false)
 
-  const roleFilter = item => allowedNavItemIds.includes(item.id) && (item.id !== 'valoraciones' || manualSurveyEnabled)
+  const roleFilter = item => allowedNavItemIds.includes(item.id) && !item.parent && (!['valoraciones', 'sugerencias'].includes(item.id) || manualSurveyEnabled)
   const sectionProps = { base, editMode, hiddenNavItems, setNavItemHidden }
 
   return (

@@ -16,7 +16,7 @@ const navLinkClass = ({ isActive }) =>
 function SidebarNavItem({ item, branchId, editMode, hidden, onToggleHide }) {
   if (!editMode) {
     return (
-      <NavLink to={`/centro/${branchId}/${item.id}`} className={navLinkClass}>
+      <NavLink to={`/centro/${branchId}/${item.id}`} className={({ isActive }) => `${navLinkClass({ isActive })} ${item.parent ? 'ml-4 pl-3 border-l border-bg-300' : ''}`}>
         {item.sidebarIcon}
         {item.label}
       </NavLink>
@@ -78,7 +78,7 @@ export default function CentroLayout() {
   const [editMode, setEditMode] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
-  const roleFilter = item => allowedNavItemIds.includes(item.id) && (item.id !== 'valoraciones' || manualSurveyEnabled)
+  const roleFilter = item => allowedNavItemIds.includes(item.id) && (!['valoraciones', 'sugerencias'].includes(item.id) || manualSurveyEnabled)
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
 
   useEffect(() => {
