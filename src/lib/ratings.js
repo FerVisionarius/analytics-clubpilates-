@@ -1,4 +1,4 @@
-export async function fetchEventRatings(supabaseClient, branchId) {
+export async function fetchEventRatings(supabaseClient, branchId, dateFrom, dateTo) {
   const { data: responses } = await supabaseClient
     .from('class_survey_responses')
     .select('event_id')
@@ -6,12 +6,18 @@ export async function fetchEventRatings(supabaseClient, branchId) {
   const candidateEventIds = [...new Set((responses || []).map(r => r.event_id))]
   if (candidateEventIds.length === 0) return []
 
-  const { data: classes } = await supabaseClient
+  let classesQuery = supabaseClient
     .from('classes')
     .select('event_id, trainer_id, name, scheduled_at')
     .eq('branch_id', branchId)
     .in('event_id', candidateEventIds)
     .order('scheduled_at', { ascending: false })
+
+  // Filtro opcional por fecha de la clase.
+  if (dateFrom) classesQuery = classesQuery.gte('scheduled_at', dateFrom + 'T00:00:00+00:00')
+  if (dateTo) classesQuery = classesQuery.lte('scheduled_at', dateTo + 'T23:59:59+00:00')
+
+  const { data: classes } = await classesQuery
 
   const eventInfo = {}
   ;(classes || []).forEach(c => {

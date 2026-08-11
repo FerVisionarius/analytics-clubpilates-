@@ -150,6 +150,8 @@ function AppRoutes() {
         <Route path="home" element={<Home />} />
         <Route path="ocupacion" element={<OcupacionPage />} />
         <Route path="instructores" element={<InstructoresPage />} />
+        <Route path="instructores-ocupacion" element={<InstructoresPage initialTab="ocupacion" navId="instructores-ocupacion" />} />
+        <Route path="instructores-valoraciones" element={<InstructoresPage initialTab="valoraciones" navId="instructores-valoraciones" />} />
         <Route path="valoraciones" element={<ValoracionesPage />} />
         <Route path="sugerencias" element={<SugerenciasPage />} />
         <Route path="miembros" element={<SociosPage />} />
@@ -181,9 +183,11 @@ function LaserrPage() {
   return <Laserr branchId={branchId} />
 }
 
-function InstructoresPage() {
+function InstructoresPage({ initialTab, navId }) {
   const { branchId } = useParams()
-  return <Instructores branchId={branchId} />
+  const { allowedNavItemIds } = useAuth()
+  if (navId && !allowedNavItemIds.includes(navId)) return <AccessDenied />
+  return <Instructores branchId={branchId} initialTab={initialTab} />
 }
 
 function ValoracionesPage() {
