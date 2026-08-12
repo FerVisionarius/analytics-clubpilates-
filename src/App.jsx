@@ -6,6 +6,7 @@ import CentroLayout from './CentroLayout'
 import Home from './Home'
 import HeatmapOcupacion from './components/HeatmapOcupacion'
 import Laserr from './components/Laserr'
+import LaserrClases from './components/LaserrClases'
 import OcupacionPromedio from './components/OcupacionPromedio'
 import ComingSoon from './ComingSoon'
 import ResetPassword from './ResetPassword'
@@ -157,6 +158,7 @@ function AppRoutes() {
         <Route path="miembros" element={<SociosPage />} />
         <Route path="retencion" element={<RetencionPage />} />
         <Route path="laserr" element={<LaserrPage />} />
+        <Route path="laserr-clases" element={<LaserrClasesPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
         <Route path="informes" element={<InformesPage />} />
@@ -181,6 +183,13 @@ function OcupacionPage() {
 function LaserrPage() {
   const { branchId } = useParams()
   return <Laserr branchId={branchId} />
+}
+
+function LaserrClasesPage() {
+  const { branchId } = useParams()
+  const { allowedNavItemIds } = useAuth()
+  if (!allowedNavItemIds.includes('laserr-clases')) return <AccessDenied />
+  return <LaserrClases branchId={branchId} />
 }
 
 function InstructoresPage({ initialTab, navId }) {
