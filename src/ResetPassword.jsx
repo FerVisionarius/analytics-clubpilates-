@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from './lib/supabase'
+import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_KEY } from './lib/supabase'
 import { establishRecoverySession } from './lib/authRecovery'
 
 export default function ResetPassword({ isInvite = false }) {
@@ -75,6 +75,16 @@ export default function ResetPassword({ isInvite = false }) {
     if (updateError) {
       setError('Error al actualizar: ' + updateError.message)
     } else {
+      // Desbloquear la cuenta (por si estaba bloqueada tras varios intentos).
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          await fetch(`${SUPABASE_FUNCTIONS_URL}/unlock-account`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_KEY },
+          })
+        }
+      } catch { /* si falla el desbloqueo, no bloquea el reset */ }
       await supabase.auth.signOut()
       setDone(true)
       setTimeout(() => navigate('/login', { replace: true }), 2000)

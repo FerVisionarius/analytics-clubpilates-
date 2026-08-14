@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const { error } = await signIn(email, password)
-      if (error) setError('Email o contraseña incorrectos')
+      if (error) setError(error.message || 'Email o contraseña incorrectos')
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,11 @@
 [functions.request-password-reset]
 verify_jwt = false
 
+[functions.login]
+verify_jwt = false
+
+[functions.unlock-account]
+verify_jwt = false
+
 [functions.monthly-report]
 import_map = "./functions/monthly-report/import_map.json"

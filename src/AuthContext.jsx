@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
-import { supabase } from './lib/supabase'
+import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_KEY } from './lib/supabase'
+import { signInWithLockout } from './lib/authLogin'
 import { isAuthRecoveryRoute } from './lib/authRecovery'
 import { fetchAllowedNavItemIds } from './lib/permissions'
 import { ALL_NAV_ITEM_IDS } from './navConfig'
@@ -88,8 +89,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function signIn(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error }
+    return signInWithLockout(supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_KEY, email, password)
   }
 
   async function signOut() {
