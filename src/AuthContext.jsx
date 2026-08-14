@@ -88,8 +88,8 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  async function signIn(email, password) {
-    return signInWithLockout(supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_KEY, email, password)
+  async function signIn(email, password, captchaToken) {
+    return signInWithLockout(supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_KEY, email, password, captchaToken)
   }
 
   async function signOut() {

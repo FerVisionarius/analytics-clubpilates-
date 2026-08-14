@@ -15,7 +15,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { email, password } = await req.json()
+    const { email, password, captchaToken } = await req.json()
     const emailNorm = (email ?? '').trim().toLowerCase()
     if (!emailNorm || !password) return json({ error: 'missing_fields' }, 400)
 
@@ -40,7 +40,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     )
-    const { data, error } = await anon.auth.signInWithPassword({ email: emailNorm, password })
+    const { data, error } = await anon.auth.signInWithPassword({
+      email: emailNorm,
+      password,
+      options: captchaToken ? { captchaToken } : undefined,
+    })
 
     if (error || !data?.session) {
       const attempts = (lock?.attempts ?? 0) + 1

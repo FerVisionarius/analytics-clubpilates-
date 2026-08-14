@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from './AuthContext'
+import HCaptchaWidget from './HCaptchaWidget'
 import logo from './assets/logo-clubpilates.png'
 
 export default function LoginPage() {
@@ -9,6 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaReset, setCaptchaReset] = useState(0)
 
   useEffect(() => {
     document.title = 'Club Pilates - Iniciar sesión'
@@ -17,10 +20,19 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    if (!captchaToken) {
+      setError('Completa el CAPTCHA para continuar')
+      return
+    }
     setLoading(true)
     try {
-      const { error } = await signIn(email, password)
-      if (error) setError(error.message || 'Email o contraseña incorrectos')
+      const { error } = await signIn(email, password, captchaToken)
+      if (error) {
+        setError(error.message || 'Email o contraseña incorrectos')
+        // El token es de un solo uso: reiniciar el captcha para reintentar.
+        setCaptchaToken('')
+        setCaptchaReset(k => k + 1)
+      }
     } finally {
       setLoading(false)
     }
@@ -65,6 +77,8 @@ export default function LoginPage() {
                 className="w-full bg-white border border-primary-200 text-text-100 rounded-lg px-3 py-2.5 text-sm placeholder-primary-200 focus:outline-none focus:border-accent-100 focus:ring-1 focus:ring-accent-100"
               />
             </div>
+
+            <HCaptchaWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} resetSignal={captchaReset} />
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">

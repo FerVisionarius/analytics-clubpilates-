@@ -1,9 +1,9 @@
 // Login a través de la edge function `login`, que bloquea la cuenta tras 3
 // intentos fallidos. Si la función no responde (5xx o sin red), cae a login
 // directo para no dejar a nadie fuera por una caída del servicio.
-export async function signInWithLockout(supabase, functionsUrl, apikey, email, password) {
+export async function signInWithLockout(supabase, functionsUrl, apikey, email, password, captchaToken) {
   const directo = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email, password, options: captchaToken ? { captchaToken } : undefined })
     return { error: error ? { message: 'Email o contraseña incorrectos' } : null }
   }
 
@@ -11,7 +11,7 @@ export async function signInWithLockout(supabase, functionsUrl, apikey, email, p
     const res = await fetch(`${functionsUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, captchaToken }),
     })
 
     if (res.status >= 500) return directo()
