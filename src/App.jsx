@@ -7,6 +7,7 @@ import Home from './Home'
 import HeatmapOcupacion from './components/HeatmapOcupacion'
 import Laserr from './components/Laserr'
 import LaserrClases from './components/LaserrClases'
+import LaserrGlobal from './components/LaserrGlobal'
 import OcupacionPromedio from './components/OcupacionPromedio'
 import ComingSoon from './ComingSoon'
 import ResetPassword from './ResetPassword'
@@ -159,6 +160,7 @@ function AppRoutes() {
         <Route path="retencion" element={<RetencionPage />} />
         <Route path="laserr" element={<LaserrPage />} />
         <Route path="laserr-clases" element={<LaserrClasesPage />} />
+        <Route path="laserr-global" element={<LaserrGlobalPage />} />
         <Route path="ocupacion-promedio" element={<OcupacionPromedioPage />} />
         <Route path="usuarios" element={<AdminUsuariosPage />} />
         <Route path="informes" element={<InformesPage />} />
@@ -190,6 +192,12 @@ function LaserrClasesPage() {
   const { allowedNavItemIds } = useAuth()
   if (!allowedNavItemIds.includes('laserr-clases')) return <AccessDenied />
   return <LaserrClases branchId={branchId} />
+}
+
+function LaserrGlobalPage() {
+  const { isSuperAdmin, toolAccess } = useAuth()
+  if (!isSuperAdmin && toolAccess?.['laserr-global'] !== true) return <AccessDenied />
+  return <LaserrGlobal />
 }
 
 function InstructoresPage({ initialTab, navId }) {

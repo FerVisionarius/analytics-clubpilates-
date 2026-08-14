@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [allowedNavItemIds, setAllowedNavItemIds] = useState(ALL_NAV_ITEM_IDS)
+  const [toolAccess, setToolAccess] = useState({})
   const [loading, setLoading] = useState(true)
   const inactivityTimerRef = useRef(null)
 
@@ -22,6 +23,10 @@ export function AuthProvider({ children }) {
       setProfile(data)
       const allowedIds = await fetchAllowedNavItemIds(supabase, data.role, ALL_NAV_ITEM_IDS)
       setAllowedNavItemIds(allowedIds)
+      const { data: tools } = await supabase.from('user_tool_access').select('tool_id, enabled').eq('user_id', data.id)
+      const toolMap = {}
+      ;(tools || []).forEach(t => { toolMap[t.tool_id] = t.enabled })
+      setToolAccess(toolMap)
       if (data.status === 'pending') {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
         if (currentUser) {
@@ -76,6 +81,7 @@ export function AuthProvider({ children }) {
         } else {
           setProfile(null)
           setAllowedNavItemIds(ALL_NAV_ITEM_IDS)
+          setToolAccess({})
           setLoading(false)
         }
       }, 0)
@@ -145,7 +151,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, hiddenNavItems, setNavItemHidden, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, toolAccess, hiddenNavItems, setNavItemHidden, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )

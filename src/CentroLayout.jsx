@@ -70,7 +70,7 @@ export default function CentroLayout() {
   const { branchId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, hiddenNavItems, setNavItemHidden, signOut } = useAuth()
+  const { profile, isAdmin, isSuperAdmin, allowedBranchIds, allowedNavItemIds, toolAccess, hiddenNavItems, setNavItemHidden, signOut } = useAuth()
   const manualSurveyEnabled = useBranchFeatureEnabled(branchId, 'envio_encuesta_manual')
   const [branch, setBranch] = useState(null)
   const [allBranches, setAllBranches] = useState([])
@@ -78,7 +78,11 @@ export default function CentroLayout() {
   const [editMode, setEditMode] = useState(false)
 
   const isHome = location.pathname.endsWith('/home')
-  const roleFilter = item => allowedNavItemIds.includes(item.id) && (!['valoraciones', 'sugerencias'].includes(item.id) || manualSurveyEnabled)
+  const roleFilter = item => {
+    // Ítems con acceso por usuario (no por rol): solo superadmin o quien lo tenga habilitado.
+    if (item.tool) return isSuperAdmin || toolAccess[item.tool] === true
+    return allowedNavItemIds.includes(item.id) && (!['valoraciones', 'sugerencias'].includes(item.id) || manualSurveyEnabled)
+  }
   const onToggleHide = itemId => setNavItemHidden(itemId, !hiddenNavItems.includes(itemId))
 
   useEffect(() => {

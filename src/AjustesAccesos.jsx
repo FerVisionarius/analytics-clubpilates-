@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase'
 // Herramientas cuyo acceso se gestiona usuario por usuario.
 const TOOLS = [
   { id: 'desarrollo', label: 'Desarrollo', desc: 'Panel de pruebas de agentes de chat y Retell (developer.clubpilatesia.es)' },
+  { id: 'laserr-global', label: 'LASERR global', desc: 'Panel LASERR con los datos sumados de todos los clubes' },
 ]
 
 export default function AjustesAccesos() {

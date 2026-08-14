@@ -346,6 +346,42 @@ export async function fetchLaserrStats(supabaseClient, branchId, dateFrom, dateT
   }
 }
 
+// LASERR sumado de todos los clubes, separando abiertos (con clases) de cerrados.
+export async function fetchLaserrGlobal(supabaseClient, dateFrom, dateTo) {
+  const { data: branches } = await supabaseClient
+    .from('branches')
+    .select('branch_id, name')
+
+  const { data: conClases } = await supabaseClient.rpc('branches_with_classes')
+  const abiertoSet = new Set((conClases || []).map(r => r.branch_id))
+
+  const results = await Promise.all(
+    (branches || []).map(async b => ({
+      abierto: abiertoSet.has(b.branch_id),
+      stats: await fetchLaserrStats(supabaseClient, b.branch_id, dateFrom, dateTo),
+    }))
+  )
+
+  const CAMPOS = ['leads', 'apuntados', 'asistidos', 'noAsistieron', 'cancelados', 'compraronEnMomento', 'compraronDespues', 'noCompraron', 'sinIntro']
+  const vacio = () => { const o = {}; CAMPOS.forEach(c => { o[c] = 0 }); return o }
+
+  const abiertos = vacio()
+  const cerrados = vacio()
+  let abiertosCount = 0
+  let cerradosCount = 0
+
+  results.forEach(r => {
+    if (r.abierto) abiertosCount++; else cerradosCount++
+    const target = r.abierto ? abiertos : cerrados
+    if (r.stats) CAMPOS.forEach(c => { target[c] += r.stats[c] || 0 })
+  })
+
+  const total = vacio()
+  CAMPOS.forEach(c => { total[c] = abiertos[c] + cerrados[c] })
+
+  return { abiertos, cerrados, total, abiertosCount, cerradosCount }
+}
+
 export function buildLaserrSteps(stats) {
   if (!stats) return []
   return [
