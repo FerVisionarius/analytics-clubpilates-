@@ -32,7 +32,7 @@ function estadoColor(m) {
 function TablaEstadistica({ titulo, filas, columnas, nota }) {
   const total = filas.reduce((sum, f) => sum + f.cantidad, 0)
   return (
-    <div className="bg-bg-200 border border-bg-300 rounded-2xl overflow-hidden">
+    <div className="bg-bg-200 border border-bg-300 rounded-2xl">
       <div className="px-6 py-4 border-b border-bg-300">
         <h3 className="text-text-100 font-semibold">{titulo}</h3>
       </div>
@@ -60,6 +60,25 @@ function TablaEstadistica({ titulo, filas, columnas, nota }) {
                       </svg>
                       <div className="absolute left-6 top-0 z-10 hidden group-hover:block bg-text-100 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-xl">
                         {f.tooltip}
+                      </div>
+                    </div>
+                  )}
+                  {f.sinDato > 0 && (
+                    <div className="relative group">
+                      <svg className="w-4 h-4 text-amber-500 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      </svg>
+                      <div className="absolute left-6 top-0 z-10 hidden group-hover:block bg-text-100 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-xl">
+                        <p className="font-semibold mb-1">{f.sinDato} contados como recurrentes sin dato de catálogo</p>
+                        <p className="text-white/70 mb-1.5">Planes no catalogados y sin "no recurrente" en el nombre:</p>
+                        <ul className="space-y-0.5 max-h-48 overflow-y-auto">
+                          {(f.sinDatoBreakdown || []).map((b, j) => (
+                            <li key={j} className="flex justify-between gap-2">
+                              <span className="truncate">{b.plan}</span>
+                              <span className="shrink-0 font-medium">{b.cantidad}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   )}

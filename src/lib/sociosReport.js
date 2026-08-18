@@ -131,18 +131,12 @@ export async function fetchSociosStats(supabaseClient, branchId) {
     }
   }
 
-  const RECURRENTE_PATTERNS = [
-    'socio fundador',
-    'suscripción ilimitada',
-    'suscripcion ilimitada',
-    'suscripción 8 clases',
-    'suscripcion 8 clases',
-    'suscripción 4 clases',
-    'suscripcion 4 clases',
-  ]
-
   let recurrente = 0
   let noRecurrente = 0
+  // "Sin dato": recurrentes que no están en el catálogo y cuyo nombre no dice
+  // "no recurrente"; los contamos como recurrentes pero los marcamos aparte.
+  let recurrenteSinDato = 0
+  const sinDatoPorPlan = {}
 
   allMembers.forEach(m => {
     if (m.plan_code && m.plan_code in catalogMap) {
@@ -158,17 +152,19 @@ export async function fetchSociosStats(supabaseClient, branchId) {
       return
     }
 
-    const esRecurrente = RECURRENTE_PATTERNS.some(pattern => p.includes(pattern))
-
-    if (esRecurrente) {
-      recurrente++
-    } else {
-      noRecurrente++
-    }
+    // Sin catálogo y sin "no recurrente" en el nombre => recurrente (sin dato).
+    recurrente++
+    recurrenteSinDato++
+    const nombre = m.plan_name || 'Sin nombre de plan'
+    sinDatoPorPlan[nombre] = (sinDatoPorPlan[nombre] || 0) + 1
   })
 
+  const sinDatoBreakdown = Object.entries(sinDatoPorPlan)
+    .map(([plan, cantidad]) => ({ plan, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad)
+
   const tipoSocio = [
-    { label: 'Recurrente', cantidad: recurrente },
+    { label: 'Recurrente', cantidad: recurrente, sinDato: recurrenteSinDato, sinDatoBreakdown },
     { label: 'No recurrente', cantidad: noRecurrente },
   ]
 
